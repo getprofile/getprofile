@@ -21,8 +21,8 @@
   <a href="https://github.com/getprofile/getprofile/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License">
   </a>
-  <a href="https://www.npmjs.com/package/@getprofile/core">
-    <img src="https://img.shields.io/npm/v/@getprofile/core.svg" alt="npm version">
+  <a href="https://www.npmjs.com/package/@getprofile/sdk-js">
+    <img src="https://img.shields.io/npm/v/@getprofile/sdk-js.svg" alt="npm version">
   </a>
   <a href="https://x.com/GetProfileAI">
     <img src="https://img.shields.io/twitter/follow/GetProfileAI?style=social" alt="Follow on X">
