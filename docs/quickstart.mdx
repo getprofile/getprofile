@@ -1,0 +1,309 @@
+---
+title: Quickstart
+description: "Get GetProfile running in under 5 minutes"
+---
+
+## Prerequisites
+
+- Docker and Docker Compose
+- An LLM API key (works with OpenAI, Anthropic, OpenRouter, or any OpenAI-compatible provider)
+
+## Option 1: Docker (Recommended)
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/getprofile/getprofile.git
+    cd getprofile
+    ```
+  </Step>
+  
+  <Step title="Configure environment">
+    ```bash
+    cp .env.docker.example .env
+    ```
+
+    Edit `.env` and add your LLM API key:
+    ```bash
+    # Works with any provider (OpenAI, Anthropic, OpenRouter, etc.)
+    LLM_API_KEY=sk-your-key-here
+
+    # Or use provider-specific keys
+    # OPENAI_API_KEY=sk-...
+    # ANTHROPIC_API_KEY=sk-...
+    ```
+
+    **Provider Configuration**: Edit `config/getprofile.json` to choose your provider:
+    ```json
+    {
+      "llm": {
+        "provider": "openai",  // or "anthropic" or "custom"
+        "model": "gpt-5-mini"  // or "claude-4-5-sonnet"
+      }
+    }
+    ```
+
+    The `.env.docker.example` file is optimized for Docker deployment.
+    For local development without Docker, use `.env.example` instead.
+
+  </Step>
+  
+  <Step title="Start services">
+    ```bash
+    source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+    ```
+
+    This starts:
+    - GetProfile Proxy on `http://localhost:3100`
+    - PostgreSQL database
+
+    **Note:** We source the `.env` file before starting to ensure long API keys are loaded correctly. Database migrations run automatically on first start. Monitor logs with:
+    ```bash
+    docker compose -f docker/docker-compose.yml logs -f proxy
+    ```
+
+  </Step>
+  
+  <Step title="Configure API key (optional)">
+    If you want to protect your proxy with an API key, set it in your `.env`:
+    ```bash
+    GETPROFILE_API_KEY=your-secret-key-here
+    ```
+
+    If not set, the proxy will accept all requests (useful for local development).
+
+    <Info>
+      **Configuration**: You can configure GetProfile via `config/getprofile.json` or environment variables. Environment variables take precedence. See [Configuration](/configuration/overview) for details.
+    </Info>
+
+    After changing `.env`, restart services:
+    ```bash
+    docker compose -f docker/docker-compose.yml down
+    source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+    ```
+
+  </Step>
+  
+  <Step title="Test the proxy">
+    ```bash
+    curl http://localhost:3100/health
+    ```
+    
+    You should see:
+    ```json
+    {
+      "status": "ok",
+      "version": "0.1.0",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+    ```
+  </Step>
+
+</Steps>
+
+## Option 2: Local Development
+
+<Steps>
+  <Step title="Prerequisites">
+    - Node.js 20+
+    - pnpm
+    - PostgreSQL 15+ (pgvector enabled)
+  </Step>
+
+<Step title="Clone and install">
+  ```bash git clone https://github.com/getprofile/getprofile.git && cd
+  getprofile && pnpm install ```
+</Step>
+
+<Step title="Set up environment">
+  ```bash
+  cp .env.example .env
+  ```
+
+Edit `.env` with your `DATABASE_URL` and `LLM_API_KEY`:
+
+```bash
+DATABASE_URL=postgresql://user:pass@localhost:5432/getprofile
+LLM_API_KEY=sk-your-key-here  # Works with OpenAI, Anthropic, etc.
+```
+
+Optional: Set `GETPROFILE_API_KEY` to require authentication on the proxy.
+
+  <Info>
+    Other settings like rate limiting, message retention, and provider configuration are now in `config/getprofile.json`. See [Configuration](/configuration/overview).
+  </Info>
+</Step>
+
+<Step title="Run migrations">```bash pnpm db:migrate ```</Step>
+
+<Step title="(Optional) Load sample data">
+  ```bash pnpm db:seed:sample ``` Seeds a demo profile for smoke-testing the
+  dashboard and API.
+</Step>
+
+<Step title="Configure API key (optional)">
+  If you want to protect your proxy with an API key, set it in your `.env`:
+  ```bash GETPROFILE_API_KEY=your-secret-key-here ``` If not set, the proxy will
+  accept all requests (useful for local development).
+</Step>
+
+  <Step title="Start development server">
+    ```bash
+    pnpm dev
+    ```
+  </Step>
+</Steps>
+
+## Using the Proxy
+
+Once running, update your OpenAI client to use GetProfile. Works with **any LLM provider**:
+
+<Tabs>
+  
+  <Tab title="GetProfile SDK">
+    <CodeGroup>
+      ```typescript TypeScript
+      import { GetProfileClient } from "@getprofile/sdk-js";
+
+      const client = new GetProfileClient({
+        apiKey: process.env.GETPROFILE_API_KEY || "not-needed-for-local",
+        baseURL: "http://localhost:3100/v1",
+        defaultHeaders: {
+          "X-GetProfile-Id": "user-123",
+          "X-Upstream-Key": process.env.OPENAI_API_KEY,
+          "X-Upstream-Provider": "openai",
+        },
+      });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-5-mini",
+        messages: [{ role: "user", content: "Hello!" }],
+      });
+      ```
+    </CodeGroup>
+
+  </Tab>
+
+  <Tab title="OpenAI SDK">
+    <CodeGroup>
+      ```typescript TypeScript
+      import OpenAI from "openai";
+
+      const client = new OpenAI({
+        apiKey: process.env.GETPROFILE_API_KEY || "not-needed-for-local",
+        baseURL: "http://localhost:3100/v1",
+        defaultHeaders: {
+          "X-GetProfile-Id": "user-123",
+          "X-Upstream-Key": process.env.OPENAI_API_KEY,
+          "X-Upstream-Provider": "openai",
+        },
+      });
+
+      const response = await client.chat.completions.create({
+        model: "gpt-5-mini",
+        messages: [{ role: "user", content: "Hello!" }],
+      });
+      ```
+
+      ```python Python
+      from openai import OpenAI
+      import os
+
+      client = OpenAI(
+          api_key=os.getenv("GETPROFILE_API_KEY", "not-needed-for-local"),
+          base_url="http://localhost:3100/v1",
+          default_headers={
+              "X-GetProfile-Id": "user-123",
+              "X-Upstream-Key": os.getenv("OPENAI_API_KEY"),
+              "X-Upstream-Provider": "openai",
+          },
+      )
+
+      response = client.chat.completions.create(
+          model="gpt-5-mini",
+          messages=[{"role": "user", "content": "Hello!"}],
+      )
+      ```
+    </CodeGroup>
+
+  </Tab>
+
+</Tabs>
+
+<Info>
+  **Headers**: Provider headers (`X-Upstream-Provider`, `X-Upstream-Key`)
+  override the config file. If not provided, GetProfile uses the default
+  provider configured in `config/getprofile.json`.
+</Info>
+
+## Customizing Extraction
+
+GetProfile includes default trait schemas and prompts in the `config/` directory:
+
+```
+config/
+├── getprofile.example.json     # Main configuration template
+├── prompts/                     # LLM extraction prompts
+│   ├── extraction.md           # Memory extraction prompt
+│   ├── summarization.md        # Profile summarization prompt
+│   └── trait-extraction.md     # Trait extraction prompt
+└── traits/                      # Trait schema definitions
+    └── default.traits.json     # Default trait schema
+```
+
+### Customizing Traits
+
+Edit `config/traits/default.traits.json` to define what GetProfile extracts from conversations:
+
+```json
+{
+  "traits": [
+    {
+      "key": "communication_style",
+      "valueType": "enum",
+      "enumValues": ["technical", "casual", "formal"],
+      "extraction": {
+        "promptSnippet": "Identify the user's preferred communication style"
+      },
+      "injection": {
+        "template": "User prefers {{value}} communication"
+      }
+    }
+  ]
+}
+```
+
+### Customizing Prompts
+
+Edit the markdown files in `config/prompts/` to change how GetProfile:
+
+- Extracts memories from conversations (`extraction.md`)
+- Generates profile summaries (`summarization.md`)
+- Identifies trait values (`trait-extraction.md`)
+
+**For Docker:** After modifying config files, rebuild and restart:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d --build
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="How It Works" icon="gear" href="/how-it-works">
+    Understand the architecture
+  </Card>
+  <Card title="Integration Options" icon="plug" href="/integrations/overview">
+    Compare proxy vs SDK
+  </Card>
+  <Card
+    title="Configure Traits"
+    icon="sliders"
+    href="/configuration/trait-schemas"
+  >
+    Customize what GetProfile extracts
+  </Card>
+  <Card title="JavaScript SDK" icon="js" href="/client-libraries/javascript">
+    Programmatic access from Node.js/TypeScript
+  </Card>
+</CardGroup>

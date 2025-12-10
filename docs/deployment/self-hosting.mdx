@@ -1,0 +1,197 @@
+---
+title: Self-Hosting Guide
+description: "Run GetProfile on your own infrastructure"
+---
+
+## Requirements
+
+- **Node.js** 20+
+- **PostgreSQL** 15+ with pgvector extension
+- **pnpm** package manager
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/getprofile/getprofile.git
+    cd getprofile
+    ```
+  </Step>
+  
+  <Step title="Install dependencies">
+    ```bash
+    pnpm install
+    ```
+  </Step>
+  
+  <Step title="Set up PostgreSQL">
+    Create a database with pgvector:
+    
+    ```sql
+    CREATE DATABASE getprofile;
+    \c getprofile
+    CREATE EXTENSION vector;
+    ```
+  </Step>
+  
+  <Step title="Configure environment">
+    ```bash
+    cp .env.example .env
+    ```
+    
+    Edit `.env`:
+    ```bash
+    DATABASE_URL=postgresql://user:pass@localhost:5432/getprofile
+    LLM_API_KEY=sk-your-key
+    GETPROFILE_API_KEY=your-server-key         # optional
+    GETPROFILE_MAX_MESSAGES=1000               # optional, prune old messages beyond this
+    GETPROFILE_SUMMARY_INTERVAL=60             # optional, minutes between summary refresh
+    GETPROFILE_RATE_LIMIT=60                   # optional, requests per minute (0 to disable)
+    ```
+  </Step>
+  
+  <Step title="Run migrations">
+    ```bash
+    pnpm db:migrate
+    ```
+  </Step>
+
+  <Step title="(Optional) Load sample data">
+    ```bash
+    pnpm db:seed:sample
+    ```
+    Seeds a demo profile for smoke-testing the server.
+  </Step>
+  
+  <Step title="Build for production">
+    ```bash
+    pnpm build
+    ```
+  </Step>
+  
+  <Step title="Start the server">
+    ```bash
+    # Start server
+    cd apps/server && pnpm start
+    ```
+  </Step>
+</Steps>
+
+## CI / Automation
+
+In CI pipelines, run migrations before tests/builds so the schema stays current:
+
+```bash
+pnpm ci:prepare   # runs migrations + sample seed (optional for local preview)
+```
+
+Use a real DATABASE_URL for staging/production; the seed is safe to skip if you prefer a clean database.
+
+## Process Management
+
+Use a process manager like PM2 for production:
+
+```bash
+# Install PM2
+npm install -g pm2
+
+# Start server
+pm2 start apps/server/dist/index.js --name getprofile-server
+
+
+# Save process list
+pm2 save
+
+# Enable startup script
+pm2 startup
+```
+
+## Reverse Proxy
+
+### Nginx
+
+```nginx
+server {
+    listen 80;
+    server_name api.getprofile.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:3100;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+
+        # SSE support
+        proxy_buffering off;
+        proxy_read_timeout 86400;
+    }
+}
+
+
+```
+
+### Caddy
+
+```
+api.getprofile.yourdomain.com {
+    reverse_proxy localhost:3100
+}
+```
+
+## Database Maintenance
+
+### Backups
+
+```bash
+# Daily backup script
+pg_dump -U getprofile getprofile > backup_$(date +%Y%m%d).sql
+
+# Restore
+psql -U getprofile getprofile < backup_20240101.sql
+```
+
+### Migrations
+
+```bash
+# Generate new migration after schema changes
+pnpm db:generate
+
+# Apply migrations
+pnpm db:migrate
+
+# View database with Drizzle Studio
+pnpm db:studio
+```
+
+## Monitoring
+
+### Health Endpoint
+
+```bash
+curl http://localhost:3100/health
+```
+
+### Logs
+
+```bash
+# PM2 logs
+pm2 logs getprofile-server
+
+# Docker logs
+docker compose logs -f server
+```
+
+## Security Checklist
+
+- Use HTTPS in production
+- Set strong database password
+- Use environment variables for secrets
+- Enable rate limiting
+- Set up firewall rules
+- Configure database backups
+- Monitor for security updates

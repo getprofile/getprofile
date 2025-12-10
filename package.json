@@ -1,0 +1,33 @@
+{
+  "name": "getprofile",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,mdx}\"",
+    "check-types": "turbo run check-types",
+    "db:generate": "turbo run db:generate --filter=@getprofile/db",
+    "db:migrate": "turbo run db:migrate --filter=@getprofile/db",
+    "db:studio": "turbo run db:studio --filter=@getprofile/db",
+    "db:seed:sample": "pnpm --filter @getprofile/db db:seed:sample",
+    "db:prepare": "pnpm db:migrate && pnpm db:seed:sample",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "docs": "cd docs && pnpm dev",
+    "ci:prepare": "pnpm db:prepare"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.6.3",
+    "typescript": "5.9.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.3"
+  }
+}

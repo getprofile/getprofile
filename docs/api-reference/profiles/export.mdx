@@ -1,0 +1,66 @@
+---
+title: Export Profile
+description: "Export all profile data"
+api: GET /api/profiles/{id}/export
+---
+
+## Overview
+
+Exports all data associated with a user profile in a portable JSON format. This endpoint is designed for GDPR data portability compliance.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID (internal UUID or external ID)
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "profile": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "externalId": "user-123",
+    "summary": "Alex is an experienced software engineer...",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  "traits": [
+    {
+      "key": "name",
+      "value": "Alex",
+      "confidence": 0.95,
+      "source": "extracted",
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "memories": [
+    {
+      "id": "mem-123",
+      "content": "Working on microservices migration",
+      "type": "event",
+      "importance": 0.8,
+      "createdAt": "2024-01-14T00:00:00Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-123",
+      "role": "user",
+      "content": "Hello!",
+      "createdAt": "2024-01-14T00:00:00Z"
+    }
+  ],
+  "exportedAt": "2024-01-15T12:00:00Z"
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl https://api.yourserver.com/api/profiles/user-123/export \
+  -H "Authorization: Bearer gp_your_key" \
+  -o profile-export.json
+```

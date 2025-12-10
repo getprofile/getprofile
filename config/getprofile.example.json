@@ -1,0 +1,84 @@
+{
+  "$comment": "This config file supports provider-agnostic LLM configuration. Works with OpenAI, Anthropic, OpenRouter, and any OpenAI-compatible API.",
+
+  "database": {
+    "url": "${DATABASE_URL}",
+    "poolSize": 10
+  },
+
+  "llm": {
+    "$comment": "LLM provider for extraction and summarization. Supports: openai, anthropic, custom",
+    "provider": "openai",
+    "apiKey": "${LLM_API_KEY}",
+    "model": "gpt-5-mini",
+    "baseUrl": null,
+    "$examples": {
+      "openai": {
+        "provider": "openai",
+        "apiKey": "${LLM_API_KEY}",
+        "model": "gpt-5-mini"
+      },
+      "anthropic": {
+        "provider": "anthropic",
+        "apiKey": "${ANTHROPIC_API_KEY}",
+        "model": "claude-4-5-sonnet"
+      },
+      "openrouter": {
+        "provider": "custom",
+        "apiKey": "${LLM_API_KEY}",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "model": "anthropic/claude-4.5-sonnet"
+      }
+    }
+  },
+
+  "upstream": {
+    "$comment": "Upstream provider for proxying chat requests. Can be different from LLM provider.",
+    "provider": "openai",
+    "apiKey": "${LLM_API_KEY}",
+    "baseUrl": null,
+    "$examples": {
+      "openai": {
+        "provider": "openai",
+        "apiKey": "${LLM_API_KEY}"
+      },
+      "anthropic": {
+        "provider": "anthropic",
+        "apiKey": "${ANTHROPIC_API_KEY}"
+      },
+      "azure_openai": {
+        "provider": "custom",
+        "apiKey": "${AZURE_OPENAI_API_KEY}",
+        "baseUrl": "https://your-resource.openai.azure.com/openai/deployments/your-deployment"
+      }
+    }
+  },
+
+  "memory": {
+    "$comment": "Memory and conversation management settings",
+    "maxMessagesPerProfile": 1000,
+    "extractionEnabled": true,
+    "summarizationInterval": 60
+  },
+
+  "traits": {
+    "$comment": "Trait extraction configuration",
+    "schemaPath": "./config/traits/default.traits.json",
+    "extractionEnabled": true,
+    "defaultTraitsEnabled": true,
+    "allowRequestOverride": true
+  },
+
+  "prompts": {
+    "$comment": "Custom prompt paths (optional)",
+    "extractionPath": "./config/prompts/extraction.md",
+    "traitExtractionPath": "./config/prompts/trait-extraction.md",
+    "summarizationPath": "./config/prompts/summarization.md"
+  },
+
+  "server": {
+    "$comment": "Server configuration (can also be set via PORT and HOST env vars)",
+    "port": 3100,
+    "host": "0.0.0.0"
+  }
+}

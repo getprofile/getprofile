@@ -1,0 +1,121 @@
+---
+title: Memories
+description: "Extracted facts and context from conversations"
+---
+
+## What are Memories?
+
+Memories are discrete pieces of information extracted from user conversations. They complement traits by storing:
+
+- Specific facts that don't fit trait schemas
+- Events and experiences mentioned
+- Contextual information for future conversations
+
+## Memory Structure
+
+```typescript
+interface Memory {
+  id: string;
+  profileId: string;
+  content: string;          // The extracted information
+  type: 'fact' | 'preference' | 'event' | 'context';
+  importance: number;       // 0.0 - 1.0
+  decayFactor: number;      // Decreases over time
+  sourceMessageIds: string[];
+  createdAt: Date;
+  lastAccessedAt: Date | null;
+}
+```
+
+## Memory Types
+
+<CardGroup cols={2}>
+  <Card title="Fact" icon="circle-info">
+    Concrete information: "Works at Acme Corp as a senior engineer"
+  </Card>
+  <Card title="Preference" icon="heart">
+    Likes and dislikes: "Prefers dark mode IDEs"
+  </Card>
+  <Card title="Event" icon="calendar">
+    Things that happened: "Started a new project last week"
+  </Card>
+  <Card title="Context" icon="layer-group">
+    Situational info: "Currently debugging a production issue"
+  </Card>
+</CardGroup>
+
+## Importance Scoring
+
+Memories are scored by likely future relevance:
+
+| Score | Description | Examples |
+|-------|-------------|----------|
+| 0.8+ | Core identity/role | Job title, primary tech stack |
+| 0.6-0.8 | Ongoing projects | Current goals, active work |
+| 0.4-0.6 | Preferences | Tool preferences, working style |
+| < 0.4 | Ephemeral context | Today's specific task |
+
+## Memory Decay
+
+Over time, memories become less relevant. The `decayFactor` (starting at 1.0) decreases:
+
+- Unused memories decay faster
+- Accessed memories are "refreshed"
+- Low importance memories decay faster
+
+This ensures recent and frequently-relevant information takes priority.
+
+## Memory Retrieval
+
+When building context for a request, GetProfile retrieves memories based on:
+
+1. **Recency**: More recent memories score higher
+2. **Importance**: Higher importance memories are prioritized
+3. **Relevance**: (Future) Semantic similarity to the current query
+4. **Access patterns**: Frequently accessed memories are boosted
+
+## Example: Memory Extraction
+
+Given this conversation:
+
+```
+User: I'm working on migrating our monolith to microservices at work. 
+      We're using Kubernetes and having some issues with the service mesh.
+      By the way, I'll be on vacation next week.
+```
+
+GetProfile extracts:
+
+```json
+[
+  {
+    "content": "Working on migrating a monolith to microservices",
+    "type": "event",
+    "importance": 0.8
+  },
+  {
+    "content": "Uses Kubernetes at work",
+    "type": "fact",
+    "importance": 0.7
+  },
+  {
+    "content": "Experiencing issues with service mesh",
+    "type": "context",
+    "importance": 0.6
+  },
+  {
+    "content": "Will be on vacation next week",
+    "type": "event",
+    "importance": 0.4
+  }
+]
+```
+
+## Deduplication
+
+GetProfile automatically handles duplicate memories:
+
+- Identical content is merged
+- Similar memories may be consolidated
+- Source messages are aggregated
+

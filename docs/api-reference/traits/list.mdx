@@ -1,0 +1,53 @@
+---
+title: List Traits
+description: "List all traits for a profile"
+api: GET /api/profiles/{id}/traits
+---
+
+## Overview
+
+Returns all traits associated with a user profile.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "traits": [
+    {
+      "key": "name",
+      "value": "Alex",
+      "valueType": "string",
+      "category": "identity",
+      "confidence": 0.95,
+      "source": "extracted",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "key": "expertise_level",
+      "value": "advanced",
+      "valueType": "enum",
+      "category": "context",
+      "confidence": 0.8,
+      "source": "extracted",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-05T00:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl https://api.yourserver.com/api/profiles/user-123/traits \
+  -H "Authorization: Bearer gp_your_key"
+```

@@ -1,0 +1,182 @@
+---
+title: Prompt Configuration
+description: "Customize extraction and summarization prompts"
+---
+
+## Custom Prompts
+
+GetProfile uses LLM prompts for extraction and summarization. You can customize these by providing your own prompt files.
+
+```json
+{
+  "prompts": {
+    "extractionPath": "./config/prompts/extraction.md",
+    "traitExtractionPath": "./config/prompts/trait-extraction.md",
+    "summarizationPath": "./config/prompts/summarization.md"
+  }
+}
+```
+
+## Memory Extraction Prompt
+
+Used to extract facts, preferences, and context from conversations.
+
+### Template Variables
+
+| Variable | Description |
+|----------|-------------|
+| `{{conversation}}` | The conversation to analyze |
+
+### Default Prompt
+
+```markdown
+# Memory Extraction Prompt
+
+You are a memory extraction assistant. Your job is to analyze 
+conversations and extract important facts, preferences, and 
+context about the user.
+
+## Instructions
+
+Given the following conversation, extract:
+1. **Facts**: Concrete information (name, job, location, etc.)
+2. **Preferences**: Things the user likes, dislikes, or prefers
+3. **Events**: Notable events or experiences mentioned
+4. **Context**: Situational information for ongoing conversations
+
+## Rules
+- Only extract information explicitly stated or strongly implied
+- Each memory should be self-contained and understandable
+- Assign importance (0.0-1.0) based on likely future relevance
+- Do not extract information about the AI assistant
+
+## Output Format
+Return a JSON array:
+\`\`\`json
+[
+  {
+    "content": "User works as a software engineer at a startup",
+    "type": "fact",
+    "importance": 0.8
+  }
+]
+\`\`\`
+
+## Conversation
+{{conversation}}
+```
+
+## Trait Extraction Prompt
+
+Used to extract structured traits based on your schema.
+
+### Template Variables
+
+| Variable | Description |
+|----------|-------------|
+| `{{trait_schema}}` | Your trait schema definitions |
+| `{{current_traits}}` | User's existing traits |
+| `{{conversation}}` | The conversation to analyze |
+
+### Default Prompt
+
+```markdown
+# Trait Extraction Prompt
+
+You are a user profiling assistant. Extract and update 
+structured traits based on conversations.
+
+## Available Traits
+{{trait_schema}}
+
+## Current User Profile
+{{current_traits}}
+
+## Instructions
+Determine if any traits should be:
+- **Created**: New trait not previously known
+- **Updated**: Existing trait needs revision
+- **Deleted**: Previous trait is contradicted
+
+## Rules
+- Only update traits with sufficient evidence
+- Provide confidence score (0.0-1.0)
+- Higher confidence for explicit statements
+- If unsure, prefer not updating
+
+## Output Format
+\`\`\`json
+[
+  {
+    "key": "expertise_level",
+    "value": "advanced",
+    "confidence": 0.75,
+    "action": "update",
+    "reason": "Used technical terminology"
+  }
+]
+\`\`\`
+
+## Conversation
+{{conversation}}
+```
+
+## Summarization Prompt
+
+Used to generate natural language profile summaries.
+
+### Template Variables
+
+| Variable | Description |
+|----------|-------------|
+| `{{traits}}` | User's traits |
+| `{{memories}}` | Recent memories |
+
+### Default Prompt
+
+```markdown
+# Profile Summarization Prompt
+
+Create a concise summary of a user based on their traits 
+and memories.
+
+## User Traits
+{{traits}}
+
+## Recent Memories
+{{memories}}
+
+## Instructions
+Write a 2-3 sentence summary describing who this user is. 
+Include:
+- Key identifying information (if known)
+- Communication preferences
+- Relevant context for conversations
+
+## Rules
+- Be concise (100-200 tokens max)
+- Write naturally, as if describing to a colleague
+- Focus on conversation-relevant information
+- Do not include speculative information
+
+## Output
+Write the summary directly, no JSON formatting.
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Be Specific" icon="bullseye">
+    Give clear extraction hints in `promptSnippet` for better trait extraction.
+  </Card>
+  <Card title="Set Thresholds" icon="sliders">
+    Use appropriate `confidenceThreshold` values—higher for critical traits.
+  </Card>
+  <Card title="Test Prompts" icon="flask">
+    Test your custom prompts with sample conversations before deploying.
+  </Card>
+  <Card title="Iterate" icon="arrows-rotate">
+    Monitor extraction quality and refine prompts based on results.
+  </Card>
+</CardGroup>
+

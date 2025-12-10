@@ -1,0 +1,365 @@
+---
+title: JavaScript/TypeScript SDK
+description: "Full-featured client library for GetProfile"
+---
+
+The official JavaScript/TypeScript SDK provides complete programmatic control over GetProfile, including OpenAI-compatible chat completions plus full profile, trait, and memory management.
+
+## Installation
+
+```bash
+npm install @getprofile/sdk-js
+# or
+pnpm add @getprofile/sdk-js
+# or
+yarn add @getprofile/sdk-js
+```
+
+## Quick Start
+
+```typescript
+import { GetProfileClient } from "@getprofile/sdk-js";
+
+const client = new GetProfileClient({
+  apiKey: "gp_your_api_key",
+  baseUrl: "http://localhost:3100", // Your GetProfile instance
+});
+
+// OpenAI-compatible chat with automatic personalization
+const completion = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [{ role: "user", content: "What should I work on today?" }],
+  user: "user-123", // Automatically injects this user's context
+});
+
+console.log(completion.choices[0].message.content);
+```
+
+## Chat Completions (OpenAI Compatible)
+
+GetProfile's primary feature is OpenAI-compatible chat completions with automatic user context injection. Just pass a `user` parameter and GetProfile handles the rest.
+
+### Non-Streaming
+
+```typescript
+const completion = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [
+    { role: "system", content: "You are a helpful assistant." },
+    { role: "user", content: "Help me plan my day" },
+  ],
+  user: "user-123", // Automatically injects user's traits and memories
+});
+
+console.log(completion.choices[0].message.content);
+```
+
+### Streaming
+
+```typescript
+const stream = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [{ role: "user", content: "Write me a personalized workout plan" }],
+  stream: true,
+  user: "user-123",
+});
+
+for await (const chunk of stream) {
+  const content = chunk.choices[0]?.delta?.content || "";
+  process.stdout.write(content);
+}
+```
+
+### Controlling Extraction and Injection
+
+You can control what gets extracted and injected on a per-request basis:
+
+```typescript
+// Skip context injection for this request
+const completion = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [{ role: "user", content: "Generic query" }],
+  user: "user-123",
+  getprofile: {
+    skipInjection: true, // Don't inject user context
+  },
+});
+
+// Skip extraction for this request
+const completion = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [{ role: "user", content: "Casual chat" }],
+  user: "user-123",
+  getprofile: {
+    skipExtraction: true, // Don't learn from this conversation
+  },
+});
+
+// Custom trait schema for domain-specific extraction
+const completion = await client.chat.completions.create({
+  model: "gpt-5-mini",
+  messages: [{ role: "user", content: "Plan my trip to Japan" }],
+  user: "user-123",
+  getprofile: {
+    traits: [
+      {
+        key: "travel_budget",
+        valueType: "enum",
+        extraction: {
+          enabled: true,
+          promptSnippet: "Extract budget preference: low, medium, high",
+        },
+        injection: {
+          enabled: true,
+          template: "User budget: {{value}}",
+          priority: 8,
+        },
+      },
+    ],
+  },
+});
+```
+
+### Supported Parameters
+
+All standard OpenAI chat completion parameters are supported:
+
+- `model` - Model to use (e.g., 'gpt-5-mini', 'gpt-5', 'gpt-4-turbo')
+- `messages` - Array of chat messages
+- `user` - User identifier for automatic profile context injection
+- `temperature`, `top_p`, `frequency_penalty`, `presence_penalty`
+- `max_tokens`, `stop`
+- `stream` - Enable streaming responses
+- `getprofile` - GetProfile-specific options (skipInjection, skipExtraction, traits)
+
+## Models
+
+### List Available Models
+
+```typescript
+const models = await client.models.list();
+console.log(models.data); // Array of available models
+```
+
+## Profiles
+
+### Get or Create Profile
+
+```typescript
+// Creates profile if it doesn't exist
+const profile = await client.profiles.getOrCreate("your-user-id");
+```
+
+This call hits `POST /api/profiles`, which is idempotent—if the profile already exists the current record is returned. Call it whenever a user signs in to guarantee they have a profile before you store traits or memories.
+
+### Get Profile with Details
+
+```typescript
+const profile = await client.profiles.get(profileId);
+// Returns: { profile, traits, recentMemories }
+```
+
+### List Profiles
+
+```typescript
+const { profiles, total } = await client.profiles.list({
+  limit: 20,
+  offset: 0,
+  search: "alex", // Optional search
+});
+```
+
+### Delete Profile
+
+```typescript
+// Cascade deletes all traits, memories, and messages
+const result = await client.profiles.delete(profileId);
+console.log(`Deleted ${result.deleted.traits} traits`);
+```
+
+### Export Profile Data
+
+```typescript
+// GDPR-compliant data export
+const exportData = await client.profiles.export(profileId);
+// Returns: { profile, traits, memories, messages, exportedAt }
+```
+
+### Ingest Data
+
+Extract traits and memories from arbitrary text data:
+
+```typescript
+// Ingest CRM notes
+const result = await client.ingestData(
+  "user-123",
+  "Customer Alex from Acme Corp. Senior engineer with 10 years experience. Prefers email communication.",
+  {
+    source: "crm",
+    metadata: { salesforceId: "abc123" },
+  }
+);
+
+console.log(`Created ${result.extracted.stats.traitsCreated} traits`);
+console.log(`Updated ${result.extracted.stats.traitsUpdated} traits`);
+console.log(`Created ${result.extracted.stats.memoriesCreated} memories`);
+
+// Access extracted data
+result.extracted.traits.forEach((trait) => {
+  console.log(`${trait.key}: ${trait.value} (${trait.action})`);
+});
+```
+
+**Common use cases:**
+
+```typescript
+// Import historical chat logs
+await client.ingestData(profileId, chatLogText, {
+  source: "chat_log",
+  metadata: { sessionId: "sess_123" },
+});
+
+// Process email threads
+await client.ingestData(profileId, emailThread, {
+  source: "email",
+  extractTraits: true,
+  extractMemories: true,
+});
+
+// Extract only traits (skip memories)
+await client.ingestData(profileId, text, {
+  extractTraits: true,
+  extractMemories: false,
+});
+```
+
+## Traits
+
+### Get All Traits
+
+```typescript
+const traits = await client.traits.list(profileId);
+```
+
+### Update Trait
+
+```typescript
+const trait = await client.traits.update(profileId, "expertise_level", {
+  value: "advanced",
+  confidence: 0.85,
+});
+```
+
+### Delete Trait
+
+```typescript
+await client.traits.delete(profileId, "outdated_trait");
+```
+
+## Memories
+
+### List Memories
+
+```typescript
+const memories = await client.memories.list(profileId, {
+  type: "fact", // Optional: 'fact' | 'preference' | 'event' | 'context'
+  limit: 20,
+});
+```
+
+### Add Memory
+
+```typescript
+const memory = await client.memories.create(profileId, {
+  content: "User prefers TypeScript over JavaScript",
+  type: "preference",
+  importance: 0.7,
+});
+```
+
+### Delete Memory
+
+```typescript
+await client.memories.delete(profileId, memoryId);
+```
+
+## TypeScript Support
+
+The SDK is fully typed. Import types as needed:
+
+```typescript
+import type {
+  Profile,
+  Trait,
+  Memory,
+  TraitSchema,
+  MemoryType,
+  TraitValueType,
+  IngestDataOptions,
+  IngestResult,
+} from "@getprofile/sdk-js";
+```
+
+## Error Handling
+
+```typescript
+import { GetProfileError } from "@getprofile/sdk-js";
+
+try {
+  await client.profiles.get("non-existent-id");
+} catch (error) {
+  if (error instanceof GetProfileError) {
+    console.error(`API Error: ${error.message}`);
+    console.error(`Status: ${error.status}`);
+  }
+}
+```
+
+## Configuration Options
+
+```typescript
+const client = new GetProfileClient({
+  apiKey: "gp_...",
+  baseUrl: "http://localhost:3100",
+
+  // Optional settings
+  timeout: 30000, // Request timeout in ms
+  retries: 3, // Number of retries on failure
+});
+```
+
+## Using with Core Package
+
+For more control, you can use the core package directly:
+
+```typescript
+import { ProfileManager, MemoryEngine, TraitEngine } from "@getprofile/core";
+import { db } from "@getprofile/db";
+
+const profileManager = new ProfileManager({
+  memory: {
+    /* config */
+  },
+  traits: {
+    /* config */
+  },
+});
+
+// Full access to engine internals
+const context = await profileManager.buildContext(profileId, query);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Complete API documentation
+  </Card>
+  <Card
+    title="Trait Schemas"
+    icon="sliders"
+    href="/configuration/trait-schemas"
+  >
+    Configure what to extract
+  </Card>
+</CardGroup>

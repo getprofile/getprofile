@@ -1,0 +1,57 @@
+# GetProfile Server Dockerfile
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+COPY packages packages
+COPY apps/server apps/server
+COPY config config
+
+# Install dependencies for all workspace packages
+RUN pnpm install --frozen-lockfile --recursive
+
+# Build server and all its dependencies
+RUN pnpm turbo run build --filter=@getprofile/server...
+
+# Production image
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Install pnpm and postgresql-client
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache postgresql-client
+
+# Copy workspace configuration
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=builder /app/turbo.json ./turbo.json
+
+# Copy built server app with dependencies
+COPY --from=builder /app/apps/server ./apps/server
+
+# Copy packages (needed for workspace dependencies)
+COPY --from=builder /app/packages ./packages
+
+# Copy config directory
+COPY --from=builder /app/config ./config
+
+# Copy node_modules
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy entrypoint script
+COPY docker/entrypoint-server.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 3100
+
+CMD ["/entrypoint.sh"]

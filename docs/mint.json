@@ -1,0 +1,132 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "GetProfile",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#000000",
+    "light": "#FFFFFF",
+    "dark": "#000000"
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/getprofile/getprofile"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "/quickstart"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "Use Cases",
+      "url": "use-cases"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Homepage",
+      "url": "https://getprofile.org",
+      "icon": "home"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/getprofile/getprofile"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "quickstart", "how-it-works"]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/profiles",
+        "concepts/traits",
+        "concepts/memories",
+        "concepts/trait-schemas"
+      ]
+    },
+    {
+      "group": "Client SDKs",
+      "pages": ["client-libraries/javascript"]
+    },
+    {
+      "group": "Configuration",
+      "pages": [
+        "configuration/overview",
+        "configuration/trait-schemas",
+        "configuration/prompts"
+      ]
+    },
+    {
+      "group": "Deployment",
+      "pages": ["deployment/docker", "deployment/self-hosting"]
+    },
+    {
+      "group": "API Reference",
+      "pages": ["api-reference/overview", "api-reference/authentication"]
+    },
+    {
+      "group": "Proxy API",
+      "pages": [
+        "api-reference/proxy/chat-completions",
+        "api-reference/proxy/models"
+      ]
+    },
+    {
+      "group": "Profile API",
+      "pages": [
+        "api-reference/profiles/list",
+        "api-reference/profiles/get",
+        "api-reference/profiles/delete",
+        "api-reference/profiles/export",
+        "api-reference/profiles/ingest"
+      ]
+    },
+    {
+      "group": "Traits API",
+      "pages": [
+        "api-reference/traits/list",
+        "api-reference/traits/update",
+        "api-reference/traits/delete"
+      ]
+    },
+    {
+      "group": "Memories API",
+      "pages": [
+        "api-reference/memories/list",
+        "api-reference/memories/create",
+        "api-reference/memories/delete"
+      ]
+    },
+    {
+      "group": "Use Cases",
+      "pages": [
+        "use-cases/overview",
+        "use-cases/customer-support-bot",
+        "use-cases/adaptive-tutor",
+        "use-cases/sales-copilot",
+        "use-cases/ecommerce-assistant",
+        "use-cases/multi-surface-assistant",
+        "use-cases/knowledge-assistant",
+        "use-cases/game-npcs",
+        "use-cases/profile-mining"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "twitter": "https://twitter.com/getprofile_ai",
+    "github": "https://github.com/getprofile/getprofile"
+  }
+}

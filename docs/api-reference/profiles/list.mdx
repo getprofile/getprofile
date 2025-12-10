@@ -1,0 +1,51 @@
+---
+title: List Profiles
+description: "List all user profiles"
+api: GET /api/profiles
+---
+
+## Overview
+
+Returns a paginated list of all user profiles.
+
+## Query Parameters
+
+<ParamField query="limit" type="number" default="20">
+  Maximum number of profiles to return
+</ParamField>
+
+<ParamField query="offset" type="number" default="0">
+  Number of profiles to skip
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search by external ID
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "profiles": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "externalId": "user-123",
+      "summary": "Alex is an experienced software engineer...",
+      "summaryVersion": 3,
+      "summaryUpdatedAt": "2024-01-15T10:30:00Z",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl "https://api.yourserver.com/api/profiles?limit=10&offset=0" \
+  -H "Authorization: Bearer gp_your_key"
+```

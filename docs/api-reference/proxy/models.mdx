@@ -1,0 +1,51 @@
+---
+title: List Models
+description: "List available models from upstream provider"
+api: GET /v1/models
+---
+
+## Overview
+
+Lists available models from the configured upstream LLM provider. This endpoint forwards to the upstream provider's models endpoint.
+
+## Request
+
+No request body required.
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5",
+      "object": "model",
+      "created": 1704067200,
+      "owned_by": "openai"
+    },
+    {
+      "id": "gpt-5-mini",
+      "object": "model",
+      "created": 1704067200,
+      "owned_by": "openai"
+    },
+    {
+      "id": "gpt-3.5-turbo",
+      "object": "model",
+      "created": 1704067200,
+      "owned_by": "openai"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl https://api.yourserver.com/v1/models \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "X-Upstream-Key: sk-openai-key"
+```

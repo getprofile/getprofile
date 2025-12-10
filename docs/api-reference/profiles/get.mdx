@@ -1,0 +1,67 @@
+---
+title: Get Profile
+description: "Get a specific user profile with traits"
+api: GET /api/profiles/{id}
+---
+
+## Overview
+
+Returns a user profile with all associated traits and recent memories.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID (internal UUID or external ID)
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "profile": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "externalId": "user-123",
+    "summary": "Alex is an experienced software engineer who prefers concise, technical explanations.",
+    "summaryVersion": 3,
+    "summaryUpdatedAt": "2024-01-15T10:30:00Z",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z",
+    "traits": [
+      {
+        "key": "name",
+        "value": "Alex",
+        "confidence": 0.95,
+        "source": "extracted",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z"
+      },
+      {
+        "key": "expertise_level",
+        "value": "advanced",
+        "confidence": 0.8,
+        "source": "extracted",
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "recentMemories": [
+    {
+      "id": "mem-123",
+      "content": "Working on microservices migration",
+      "type": "event",
+      "importance": 0.8,
+      "createdAt": "2024-01-14T00:00:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl https://api.yourserver.com/api/profiles/user-123 \
+  -H "Authorization: Bearer gp_your_key"
+```

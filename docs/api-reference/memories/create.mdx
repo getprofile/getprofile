@@ -1,0 +1,60 @@
+---
+title: Create Memory
+description: "Manually add a memory to a profile"
+api: POST /api/profiles/{id}/memories
+---
+
+## Overview
+
+Manually creates a new memory for a user profile. Use this to add context that wasn't captured during conversations.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+## Request Body
+
+<ParamField body="content" type="string" required>
+  The memory content
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Memory type: `fact`, `preference`, `event`, or `context`
+</ParamField>
+
+<ParamField body="importance" type="number">
+  Importance score (0.0-1.0). Default: 0.5
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "memory": {
+    "id": "mem-125",
+    "content": "Customer has enterprise support contract",
+    "type": "fact",
+    "importance": 0.9,
+    "decayFactor": 1.0,
+    "createdAt": "2024-01-15T00:00:00Z",
+    "lastAccessedAt": null
+  }
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl -X POST https://api.yourserver.com/api/profiles/user-123/memories \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Customer has enterprise support contract",
+    "type": "fact",
+    "importance": 0.9
+  }'
+```

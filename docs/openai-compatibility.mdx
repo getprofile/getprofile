@@ -1,0 +1,172 @@
+---
+title: OpenAI Drop-In Mode
+description: "Use GetProfile as a drop-in replacement for OpenAI SDK"
+---
+
+The easiest way to add persistent memory to your AI application. Simply point your existing OpenAI SDK to GetProfile's base URL and everything else works automatically.
+
+## How It Works
+
+```
+┌─────────────────┐     ┌──────────────────────────────────┐     ┌─────────────────┐
+│                 │     │         GetProfile Proxy          │     │                 │
+│   Your App      │────▶│                                  │────▶│   LLM Provider  │
+│                 │     │  1. Load user profile            │     │   (OpenAI, etc) │
+│                 │     │  2. Retrieve relevant memories   │     │                 │
+└─────────────────┘     │  3. Inject context into prompt   │     └─────────────────┘
+                        │  4. Forward to LLM               │
+                        │  5. Stream response back         │
+                        │  6. Extract traits (background)  │
+                        └──────────────────────────────────┘
+```
+
+## Quick Start
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: 'gp_your_getprofile_key',
+baseURL: 'http://localhost:3100/v1', // Or your GetProfile instance
+defaultHeaders: {
+'X-GetProfile-Id': 'user-123', // Your app's user ID
+'X-Upstream-Key': 'sk-your-openai-key',
+},
+});
+
+// Use exactly like OpenAI - memory is automatic!
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [{ role: 'user', content: 'Hello!' }],
+});
+
+````
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="gp_your_getprofile_key",
+    base_url="http://localhost:3100/v1",
+    default_headers={
+        "X-GetProfile-Id": "user-123",
+        "X-Upstream-Key": "sk-your-openai-key",
+    },
+)
+
+response = client.chat.completions.create(
+    model="gpt-5",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+````
+
+```bash cURL
+curl http://localhost:3100/v1/chat/completions \
+  -H "Authorization: Bearer gp_your_getprofile_key" \
+  -H "X-GetProfile-Id: user-123" \
+  -H "X-Upstream-Key: sk-your-openai-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+</CodeGroup>
+
+## Required Headers
+
+| Header            | Description                               | Required |
+| ----------------- | ----------------------------------------- | -------- |
+| `Authorization`   | Your GetProfile API key (`Bearer gp_...`) | Yes      |
+| `X-GetProfile-Id` | Your app's user identifier                | Yes\*    |
+| `X-Upstream-Key`  | Your LLM provider API key                 | Yes      |
+
+\*Can also be provided via `body.user` or `body.metadata.profile_id`
+
+## What Gets Injected
+
+GetProfile automatically adds a system message with user context:
+
+```
+## User Profile
+Alex is an experienced software engineer who prefers concise, technical explanations.
+They work primarily with Python and have been exploring distributed systems.
+
+## User Attributes
+- Communication style: technical
+- Detail preference: brief
+- Expertise level: advanced
+
+## Relevant Context
+- User mentioned working on a microservices migration last week
+- User prefers async/await patterns over callbacks
+```
+
+## Streaming Support
+
+GetProfile fully supports streaming responses:
+
+```typescript
+const stream = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Hello!" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || "");
+}
+```
+
+Background trait extraction happens after the stream completes.
+
+## Per-Request Trait Overrides
+
+You can override the trait schema for individual requests:
+
+```typescript
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Help me plan my trip" }],
+  // @ts-ignore - GetProfile extension
+  extra_body: {
+    getprofile: {
+      traits: [
+        {
+          key: "travel_preferences",
+          valueType: "array",
+          extraction: {
+            enabled: true,
+            promptSnippet: "Extract travel style preferences",
+          },
+          injection: {
+            enabled: true,
+            template: "User travel preferences: {{value}}",
+          },
+        },
+      ],
+    },
+  },
+});
+```
+
+## Configuration
+
+See [Configuration Overview](/configuration/overview) for full proxy configuration options.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Trait Schemas"
+    icon="sliders"
+    href="/configuration/trait-schemas"
+  >
+    Customize what GetProfile extracts
+  </Card>
+  <Card title="JavaScript SDK" icon="js" href="/client-libraries/javascript">
+    Programmatic access from Node.js/TypeScript
+  </Card>
+</CardGroup>

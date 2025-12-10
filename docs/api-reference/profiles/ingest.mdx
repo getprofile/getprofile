@@ -1,0 +1,276 @@
+---
+title: Ingest Data
+description: "Extract traits and memories from arbitrary text data"
+api: POST /api/profiles/{id}/ingest
+---
+
+## Overview
+
+Ingest arbitrary text data and extract user traits and memories synchronously. This endpoint allows you to process historical data, CRM notes, chat logs, emails, or any text containing user information.
+
+Unlike the LLM proxy which processes conversations in real-time, this endpoint provides immediate extraction results, making it ideal for batch imports and offline processing.
+
+## Use Cases
+
+- **Historical chat log import** - Bulk import past conversations
+- **CRM integration** - Extract user info from Salesforce/HubSpot notes
+- **Email thread processing** - Analyze support ticket histories
+- **Batch migrations** - Import user data from other systems
+- **Offline processing** - Extract traits without live LLM calls
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID (internal UUID or external ID)
+</ParamField>
+
+## Request Body
+
+<ParamField body="data" type="string" required>
+  The text data to ingest (max 100KB). Can be any text containing user
+  information.
+</ParamField>
+
+<ParamField body="source" type="string">
+  Optional source identifier (e.g., "crm", "chat_log", "email", "salesforce")
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional metadata object for tracking (e.g., `{ "salesforceId": "abc123" }`)
+</ParamField>
+
+<ParamField body="extractTraits" type="boolean" default={true}>
+  Whether to extract traits from the data
+</ParamField>
+
+<ParamField body="extractMemories" type="boolean" default={true}>
+  Whether to extract memories from the data
+</ParamField>
+
+## Response
+
+<ResponseField name="profile" type="object">
+  The updated profile information
+</ResponseField>
+
+<ResponseField name="extracted" type="object">
+  Extraction results
+
+  <Expandable title="properties">
+    <ResponseField name="traits" type="array">
+      Array of extracted traits with `key`, `value`, `confidence`, and `action` (create/update)
+    </ResponseField>
+
+    <ResponseField name="memories" type="array">
+      Array of extracted memories
+    </ResponseField>
+
+    <ResponseField name="stats" type="object">
+      Statistics: `traitsCreated`, `traitsUpdated`, `memoriesCreated`
+    </ResponseField>
+
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="source" type="string | null">
+  The source passed in the request
+</ResponseField>
+
+<ResponseField name="metadata" type="object | null">
+  The metadata passed in the request
+</ResponseField>
+
+## Response Example
+
+<ResponseExample>
+```json
+{
+  "profile": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "externalId": "user-123",
+    "summary": "Alex is a senior engineer at Acme Corp...",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  "extracted": {
+    "traits": [
+      {
+        "key": "name",
+        "value": "Alex",
+        "confidence": 0.9,
+        "action": "create"
+      },
+      {
+        "key": "expertise_level",
+        "value": "senior",
+        "confidence": 0.85,
+        "action": "update"
+      },
+      {
+        "key": "interests",
+        "value": ["TypeScript", "AI"],
+        "confidence": 0.8,
+        "action": "update"
+      }
+    ],
+    "memories": [
+      {
+        "id": "mem-456",
+        "content": "Works at Acme Corp",
+        "type": "fact",
+        "importance": 0.8,
+        "createdAt": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "mem-457",
+        "content": "Prefers technical communication",
+        "type": "preference",
+        "importance": 0.7,
+        "createdAt": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "stats": {
+      "traitsCreated": 1,
+      "traitsUpdated": 2,
+      "memoriesCreated": 2
+    }
+  },
+  "source": "crm",
+  "metadata": {
+    "salesforceId": "abc123",
+    "importedBy": "migration-script"
+  }
+}
+```
+</ResponseExample>
+
+## Examples
+
+### Basic Usage
+
+```bash
+curl -X POST https://api.yourserver.com/api/profiles/user-123/ingest \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "Alex is a senior engineer at Acme Corp. Prefers TypeScript and technical communication."
+  }'
+```
+
+### CRM Data Import
+
+```bash
+curl -X POST https://api.yourserver.com/api/profiles/user-123/ingest \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "Customer Alex Thompson from Acme Corp. Contact preference: email. Technical background, 10+ years experience. Currently evaluating our enterprise plan. Key decision maker for engineering tools.",
+    "source": "crm",
+    "metadata": {
+      "salesforceId": "0035000000abc123",
+      "accountName": "Acme Corp",
+      "importDate": "2024-01-15"
+    }
+  }'
+```
+
+### Chat Log Import
+
+```bash
+curl -X POST https://api.yourserver.com/api/profiles/user-123/ingest \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "User: Hi, I am Alex. I work as a senior engineer.\nAssistant: Nice to meet you!\nUser: I prefer concise, technical explanations.\nAssistant: Got it, I will keep responses technical and to the point.",
+    "source": "chat_log",
+    "metadata": {
+      "sessionId": "sess_abc123",
+      "platform": "web"
+    }
+  }'
+```
+
+### Extract Only Traits
+
+```bash
+curl -X POST https://api.yourserver.com/api/profiles/user-123/ingest \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": "Alex, senior software engineer, prefers TypeScript",
+    "extractTraits": true,
+    "extractMemories": false
+  }'
+```
+
+## Error Responses
+
+<ResponseExample>
+```json 400
+{
+  "error": {
+    "message": "data is required and must be a non-empty string",
+    "type": "invalid_request_error",
+    "code": "invalid_data"
+  }
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 400
+{
+  "error": {
+    "message": "data size exceeds maximum of 102400 bytes",
+    "type": "invalid_request_error",
+    "code": "data_too_large"
+  }
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 404
+{
+  "error": {
+    "message": "Profile not found",
+    "type": "not_found",
+    "code": "profile_not_found"
+  }
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 500
+{
+  "error": {
+    "message": "Trait extraction failed",
+    "type": "internal_error",
+    "code": "extraction_error"
+  }
+}
+```
+</ResponseExample>
+
+## Best Practices
+
+1. **Data Size** - Keep data under 100KB per request. For larger datasets, split into multiple requests.
+
+2. **Source Tracking** - Use the `source` field to track where data originated for audit trails.
+
+3. **Metadata** - Include relevant metadata to link back to source systems (CRM IDs, session IDs, etc.).
+
+4. **Batch Processing** - For bulk imports, process profiles sequentially to avoid rate limits.
+
+5. **Error Handling** - Implement retry logic for transient failures (500 errors).
+
+## Comparison with Live Proxy
+
+| Feature             | Ingest Endpoint       | LLM Proxy                   |
+| ------------------- | --------------------- | --------------------------- |
+| **Use Case**        | Batch/historical data | Real-time conversations     |
+| **Processing**      | Synchronous           | Background (async)          |
+| **Returns Results** | Yes (immediate)       | No (extracts in background) |
+| **Data Format**     | Any text              | OpenAI chat format          |
+| **Rate Limit**      | Separate limit        | Standard proxy limit        |

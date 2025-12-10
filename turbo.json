@@ -1,0 +1,69 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+  "globalEnv": [
+    "DATABASE_URL",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "LLM_API_KEY",
+    "LLM_PROVIDER",
+    "LLM_BASE_URL",
+    "LLM_MODEL",
+    "GETPROFILE_API_KEY",
+    "GETPROFILE_CONFIG_PATH",
+    "PORT",
+    "HOST",
+    "PROMPTS_CONFIG_DIR",
+    "UPSTREAM_BASE_URL",
+    "UPSTREAM_API_KEY",
+    "UPSTREAM_PROVIDER",
+    "GETPROFILE_MAX_MESSAGES",
+    "GETPROFILE_SUMMARY_INTERVAL",
+    "GETPROFILE_RATE_LIMIT",
+    "NODE_ENV",
+    "LOG_LEVEL",
+    "ALLOWED_ORIGINS",
+    "npm_package_version"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:prepare": {
+      "cache": false
+    },
+    "db:seed:sample": {
+      "cache": false
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
+    }
+  }
+}

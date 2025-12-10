@@ -1,0 +1,165 @@
+---
+title: Profile Miner as a Service (Extraction-First, Injection-Optional)
+description: "Extraction-first service for analytics, routing, and other internal logic"
+---
+
+## Scenario
+
+Team wants structured user profiles for analytics, routing, or other internal logic — not just for LLM prompts.
+
+## Extraction
+
+They stream conversation logs, events, and reviews to GetProfile:
+
+- It extracts traits like:
+  - `NPS_risk`: likely detractor vs promoter
+  - `churn_risk_reasons[]`
+  - `product_feature_needs[]`
+  - `expertise` / `segment` (SMB vs enterprise, hobbyist vs pro)
+
+## Injection
+
+- Some teams might still have their own LLM stack; they just call `GET /profiles/:id` to build prompts manually.
+- Others may later switch to GetProfile proxy to get **automatic injection** with the same traits.
+
+## Impact
+
+- They can use traits **everywhere**:
+  - marketing segmentation,
+  - feature flags ("show advanced UI for experts"),
+  - routing to different flows based on `segment` or `risk`.
+- And, if/when they want, they get "free" prompt injection by pointing their LLM client to the GetProfile proxy.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+// Option 1: Extract-only (using SDK)
+import { GetProfileClient } from '@getprofile/sdk';
+
+const client = new GetProfileClient({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com',
+});
+
+// Stream events to extract traits
+await client.memories.create({
+profileId: userId,
+content: 'User canceled subscription, mentioned pricing concerns',
+metadata: {
+event_type: 'churn_event',
+},
+});
+
+// Later, retrieve profile for analytics
+const profile = await client.profiles.get(userId);
+const traits = await client.traits.list(userId);
+
+// Use traits for routing, feature flags, etc.
+if (traits.find(t => t.name === 'segment' && t.value === 'enterprise')) {
+// Show enterprise features
+}
+
+// Option 2: Extract + Inject (using proxy)
+import OpenAI from 'openai';
+
+const llmClient = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId,
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// LLM calls automatically get profile injection
+const response = await llmClient.chat.completions.create({
+model: 'gpt-5',
+messages: [{ role: 'user', content: 'Help me with...' }],
+});
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "NPS_risk": {
+    "type": "string",
+    "enum": ["promoter", "passive", "detractor"],
+    "description": "Likely Net Promoter Score category"
+  },
+  "churn_risk": {
+    "type": "string",
+    "enum": ["low", "medium", "high", "critical"],
+    "description": "Risk level of user churning"
+  },
+  "churn_risk_reasons": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Factors contributing to churn risk"
+  },
+  "product_feature_needs": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Features the user has expressed interest in or needs"
+  },
+  "expertise": {
+    "type": "string",
+    "enum": ["beginner", "intermediate", "advanced", "expert"],
+    "description": "User's expertise level"
+  },
+  "segment": {
+    "type": "string",
+    "enum": ["hobbyist", "smb", "mid-market", "enterprise"],
+    "description": "User segment classification"
+  }
+}
+````
+
+## Use Cases for Extracted Profiles
+
+<CardGroup cols={2}>
+  <Card title="Marketing Segmentation" icon="users">
+    Route users to different marketing campaigns based on extracted traits
+  </Card>
+  <Card title="Feature Flags" icon="toggle-on">
+    Show/hide features based on user expertise or segment
+  </Card>
+  <Card title="Support Routing" icon="headset">
+    Route support tickets to appropriate teams based on user profile
+  </Card>
+  <Card title="Analytics" icon="chart-bar">
+    Build dashboards and reports from structured profile data
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="SDK Integration" icon="js" href="/client-libraries/javascript">
+    Programmatic access to profiles and traits
+  </Card>
+  <Card title="Profiles API" icon="user" href="/api-reference/profiles/get">
+    Retrieve profiles for analytics and routing
+  </Card>
+  <Card
+    title="Export API"
+    icon="download"
+    href="/api-reference/profiles/export"
+  >
+    Export profile data for external analytics tools
+  </Card>
+  <Card
+    title="Proxy Integration"
+    icon="arrow-right-arrow-left"
+    href="/openai-compatibility"
+  >
+    Add automatic injection when ready
+  </Card>
+</CardGroup>

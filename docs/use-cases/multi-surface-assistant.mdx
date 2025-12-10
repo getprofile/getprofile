@@ -1,0 +1,146 @@
+---
+title: Multi-Surface Personal Assistant (Telegram, Web, Desktop)
+description: "One personal AI that works consistently across all platforms"
+---
+
+## Scenario
+
+One "personal AI" used across chat, browser extension, and desktop app that needs to maintain consistent context across all surfaces.
+
+## Extraction
+
+From all surfaces, GetProfile builds a single user profile:
+
+- `life_domains[]`: work, fitness, finances, hobby projects
+- `time_constraints`: works late, free on weekends, calls best in evenings
+- `tool_preferences[]`: Notion, Google Calendar, Todoist, VSCode
+- `planning_style`: likes detailed plans vs loose suggestions
+- `privacy_boundaries`: topics user asked not to store or revisit
+
+It learns these passively as the user chats and issues commands.
+
+## Injection
+
+Any time any surface calls an LLM:
+
+- GetProfile's proxy injects:
+  - "User is a freelance dev, uses Notion & Google Calendar, prefers weekly overview plans, often overwhelmed by too many micro tasks."
+
+- It chooses a few cross-surface memories:
+  - last week's goals,
+  - tasks the user procrastinated on,
+  - commitments noted in other channels.
+
+## Impact
+
+- The Telegram bot, desktop agent, and browser extension all "share a brain".
+- The assistant proposes realistic plans and reminders consistent with how the user actually behaves, not just generic advice.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+// Telegram Bot
+import OpenAI from 'openai';
+
+const telegramClient = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId,
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Browser Extension
+const extensionClient = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId, // Same user ID
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Desktop App
+const desktopClient = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId, // Same user ID
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// All three clients share the same profile and memories
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "life_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Areas of life the user manages (work, fitness, finances, etc.)"
+    },
+    "time_constraints": {
+      "type": "object",
+      "properties": {
+        "work_schedule": {
+          "type": "string"
+        },
+        "free_times": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_call_times": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "User's availability and time preferences"
+    },
+    "tool_preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tools and apps the user prefers to use"
+    },
+    "planning_style": {
+      "type": "string",
+      "enum": ["detailed", "loose", "minimal"],
+      "description": "How much structure the user prefers in plans"
+    },
+    "privacy_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Topics the user has asked not to be stored or referenced"
+    }
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="SDK Integration" icon="js" href="/client-libraries/javascript">
+    Integrate GetProfile into multiple platforms with the JavaScript SDK
+  </Card>
+  <Card title="Profiles API" icon="user" href="/api-reference/profiles/get">
+    Access user profiles from any surface
+  </Card>
+</CardGroup>

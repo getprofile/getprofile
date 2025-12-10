@@ -1,0 +1,75 @@
+---
+title: API Overview
+description: "GetProfile API reference"
+---
+
+## Base URLs
+
+| Environment | URL                          |
+| ----------- | ---------------------------- |
+| Self-hosted | `http://localhost:3100`      |
+| Production  | `https://api.yourserver.com` |
+
+## API Groups
+
+<CardGroup cols={2}>
+  <Card
+    title="Proxy API"
+    icon="forward"
+    href="/api-reference/proxy/chat-completions"
+  >
+    OpenAI-compatible LLM proxy endpoints
+  </Card>
+  <Card title="Profile API" icon="user" href="/api-reference/profiles/list">
+    Manage user profiles
+  </Card>
+  <Card title="Traits API" icon="tags" href="/api-reference/traits/list">
+    View and update user traits
+  </Card>
+  <Card title="Memories API" icon="brain" href="/api-reference/memories/list">
+    Access user memories
+  </Card>
+</CardGroup>
+
+## Endpoint Summary
+
+### Proxy Endpoints (OpenAI-compatible)
+
+| Method | Endpoint               | Description                 |
+| ------ | ---------------------- | --------------------------- |
+| POST   | `/v1/chat/completions` | Chat completion with memory |
+| GET    | `/v1/models`           | List available models       |
+
+### Profile Endpoints
+
+| Method | Endpoint                   | Description                             |
+| ------ | -------------------------- | --------------------------------------- |
+| GET    | `/api/profiles`            | List all profiles                       |
+| POST   | `/api/profiles`            | Create or get profile by external ID    |
+| GET    | `/api/profiles/:id`        | Get profile details                     |
+| DELETE | `/api/profiles/:id`        | Delete profile                          |
+| GET    | `/api/profiles/:id/export` | Export profile data                     |
+| POST   | `/api/profiles/:id/ingest` | Ingest data and extract traits/memories |
+
+### Trait Endpoints
+
+| Method | Endpoint                        | Description  |
+| ------ | ------------------------------- | ------------ |
+| GET    | `/api/profiles/:id/traits`      | List traits  |
+| PUT    | `/api/profiles/:id/traits/:key` | Update trait |
+| DELETE | `/api/profiles/:id/traits/:key` | Delete trait |
+
+### Memory Endpoints
+
+| Method | Endpoint                               | Description   |
+| ------ | -------------------------------------- | ------------- |
+| GET    | `/api/profiles/:id/memories`           | List memories |
+| POST   | `/api/profiles/:id/memories`           | Create memory |
+| DELETE | `/api/profiles/:id/memories/:memoryId` | Delete memory |
+
+### Utility Endpoints
+
+| Method | Endpoint  | Description     |
+| ------ | --------- | --------------- |
+| GET    | `/health` | Health check    |
+| GET    | `/ready`  | Readiness check |

@@ -1,0 +1,36 @@
+---
+title: Delete Memory
+description: "Delete a memory from a profile"
+api: DELETE /api/profiles/{id}/memories/{memoryId}
+---
+
+## Overview
+
+Removes a specific memory from a user profile.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+<ParamField path="memoryId" type="string" required>
+  Memory ID to delete
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl -X DELETE https://api.yourserver.com/api/profiles/user-123/memories/mem-125 \
+  -H "Authorization: Bearer gp_your_key"
+```

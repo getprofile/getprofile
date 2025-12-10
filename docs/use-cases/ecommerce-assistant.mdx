@@ -1,0 +1,138 @@
+---
+title: Conversational Recommender / E-Commerce Assistant
+description: "Chat-based product finders with persistent style and preference memory"
+---
+
+## Scenario
+
+Chat-based product finder on an e-commerce site or marketplace that remembers user preferences across sessions.
+
+## Extraction
+
+From on-site chat, searches, clicks, and purchases, GetProfile maintains:
+
+- `style_preferences[]`: "minimalist", "streetwear", "pastel colors"
+- `constraints`: budget, size, materials to avoid (e.g. wool)
+- `brand_affinities[]` and `brand_avoidances[]`
+- `decision_speed`: impulse buyer vs researcher
+
+This comes from conversation like "I hate wool sweaters" or "I usually spend under $100".
+
+## Injection
+
+For each conversation turn:
+
+- GetProfile injects a compact preference block:
+  - "User likes minimalist, neutral colors, hates wool, typical budget under $80, prefers sustainable brands."
+
+- It injects a few recent **preference-confirming memories** (click/purchase events) to help retrieval.
+
+The LLM then uses this as:
+
+- Additional filters in its retrieval/system prompt ("avoid wool, budget under 80"),
+- Guidance for how to present results ("3 options, sorted by sustainability and price").
+
+## Impact
+
+- Fewer irrelevant suggestions, higher conversion, and a user who feels understood without filling forms.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId,
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Product recommendation request
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are a helpful shopping assistant. Recommend products that match the user\'s style and budget preferences.',
+},
+{
+role: 'user',
+content: 'I need a new winter jacket.',
+},
+],
+});
+// GetProfile injects style preferences, budget constraints, and past purchases
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "style_preferences": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Style categories the user prefers"
+  },
+  "budget_range": {
+    "type": "object",
+    "properties": {
+      "min": {
+        "type": "number"
+      },
+      "max": {
+        "type": "number"
+      }
+    },
+    "description": "Typical spending range"
+  },
+  "size_preferences": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Preferred sizes"
+  },
+  "material_avoidances": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Materials the user dislikes or is allergic to"
+  },
+  "brand_affinities": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Brands the user prefers"
+  },
+  "decision_speed": {
+    "type": "string",
+    "enum": ["impulse", "researcher", "comparison-shopper"],
+    "description": "How quickly the user makes purchase decisions"
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Proxy Integration"
+    icon="arrow-right-arrow-left"
+    href="/openai-compatibility"
+  >
+    Set up automatic preference injection for your chat interface
+  </Card>
+  <Card title="Memories API" icon="brain" href="/api-reference/memories/create">
+    Store purchase events and preference confirmations
+  </Card>
+</CardGroup>

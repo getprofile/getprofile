@@ -1,0 +1,118 @@
+---
+title: Introduction
+description: "User profile and long-term memory for your AI agent"
+---
+
+## The Problem
+
+LLMs are stateless. Every conversation starts from scratch. Your AI assistant doesn't remember:
+
+- User preferences ("I prefer concise answers")
+- Past context ("We discussed this project last week")
+- Personal details ("I'm a Python developer working at a startup")
+
+This makes AI interactions feel impersonal and repetitive.
+
+## The Solution
+
+GetProfile is a **drop-in LLM proxy** that automatically:
+
+<CardGroup cols={2}>
+  <Card title="Captures" icon="inbox">
+    Conversations between users and your AI
+  </Card>
+  <Card title="Extracts" icon="brain">
+    Structured traits and memories using LLM analysis
+  </Card>
+  <Card title="Injects" icon="syringe">
+    Relevant context into every prompt
+  </Card>
+  <Card title="Updates" icon="arrows-rotate">
+    User profiles continuously in the background
+  </Card>
+</CardGroup>
+
+## Multiple Integration Options
+
+<CardGroup cols={2}>
+  <Card title="LLM Proxy" icon="arrow-right-arrow-left">
+    Change your OpenAI base URL for automatic memory injection
+  </Card>
+  <Card title="JavaScript SDK" icon="js">
+    Programmatic access from Node.js/TypeScript
+  </Card>
+</CardGroup>
+
+### Proxy Integration (Automatic)
+
+Just change your OpenAI base URL. That's it.
+
+```typescript
+// Before: Stateless AI
+const client = new OpenAI({ apiKey: "sk-..." });
+
+// After: AI with memory
+const client = new OpenAI({
+  apiKey: "gp_...", // Your GetProfile API key
+  baseURL: "https://api.yourserver.com/v1", // Or your self-hosted instance
+  defaultHeaders: {
+    "X-GetProfile-Id": userId, // Your app's user ID
+    "X-Upstream-Key": "sk-...", // Your OpenAI key
+  },
+});
+
+// Same API, now with persistent memory
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "How should I refactor this?" }],
+});
+```
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion title="Structured User Profiles" icon="user">
+    Unlike generic memory solutions that store blobs of text, GetProfile extracts **typed traits** with confidence scores:
+    
+    ```json
+    {
+      "name": { "value": "Alex", "confidence": 0.95 },
+      "expertise_level": { "value": "advanced", "confidence": 0.8 },
+      "communication_style": { "value": "technical", "confidence": 0.7 }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Zero-Friction Integration" icon="plug">
+    - OpenAI-compatible proxy — works with any OpenAI SDK
+    - No code changes — just update your base URL
+    - Streaming support — full SSE streaming passthrough
+  </Accordion>
+  
+  <Accordion title="Customizable Trait Schema" icon="sliders">
+    Define what matters for your app with JSON configuration files.
+  </Accordion>
+  
+  <Accordion title="Open Source & Self-Hostable" icon="code">
+    - Apache 2.0 licensed — use it anywhere
+    - Self-host with Docker — your data stays with you
+    - Transparent — audit the code, understand what's happening
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="How It Works" icon="gear" href="/how-it-works">
+    Understand the architecture
+  </Card>
+  <Card title="Integration Options" icon="plug" href="/integrations/overview">
+    Choose the right integration for your use case
+  </Card>
+  <Card title="JavaScript SDK" icon="js" href="/client-libraries/javascript">
+    Programmatic access from Node.js/TypeScript
+  </Card>
+</CardGroup>

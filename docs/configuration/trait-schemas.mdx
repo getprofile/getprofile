@@ -1,0 +1,219 @@
+---
+title: Trait Schema Configuration
+description: "Define custom trait extraction rules"
+---
+
+## Schema File Location
+
+Place your trait schema in `config/traits/` and reference it in your configuration:
+
+```json
+{
+  "traits": {
+    "schemaPath": "./config/traits/my-schema.traits.json"
+  }
+}
+```
+
+## Schema Format
+
+```json
+{
+  "traits": [
+    {
+      "key": "trait_name",
+      "label": "Human Readable Name",
+      "description": "What this trait represents",
+      "valueType": "string",
+      "category": "category_name",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Extraction hint for the LLM",
+        "confidenceThreshold": 0.5
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User prefers {{value}}.",
+        "priority": 5
+      }
+    }
+  ]
+}
+```
+
+## Value Types
+
+<Tabs>
+  <Tab title="string">
+    Free-form text value.
+    
+    ```json
+    {
+      "key": "name",
+      "valueType": "string"
+    }
+    ```
+    
+    Extracted value: `"Alex"`
+  </Tab>
+  
+  <Tab title="number">
+    Numeric value.
+    
+    ```json
+    {
+      "key": "years_experience",
+      "valueType": "number"
+    }
+    ```
+    
+    Extracted value: `5`
+  </Tab>
+  
+  <Tab title="boolean">
+    True/false value.
+    
+    ```json
+    {
+      "key": "prefers_dark_mode",
+      "valueType": "boolean"
+    }
+    ```
+    
+    Extracted value: `true`
+  </Tab>
+  
+  <Tab title="enum">
+    One of predefined values.
+    
+    ```json
+    {
+      "key": "expertise_level",
+      "valueType": "enum",
+      "enumValues": ["beginner", "intermediate", "advanced", "expert"]
+    }
+    ```
+    
+    Extracted value: `"advanced"`
+  </Tab>
+  
+  <Tab title="array">
+    List of values.
+    
+    ```json
+    {
+      "key": "interests",
+      "valueType": "array"
+    }
+    ```
+    
+    Extracted value: `["Python", "ML", "DevOps"]`
+  </Tab>
+</Tabs>
+
+## Extraction Settings
+
+### promptSnippet
+
+A hint added to the extraction prompt to help the LLM understand what to look for:
+
+```json
+{
+  "key": "communication_style",
+  "extraction": {
+    "promptSnippet": "Assess if user prefers formal, casual, technical, or simple communication based on their language and requests"
+  }
+}
+```
+
+### confidenceThreshold
+
+Minimum confidence score required to store the trait:
+
+| Threshold | Use Case |
+|-----------|----------|
+| 0.9 | High-stakes traits (name, PII) |
+| 0.7 | Important preferences |
+| 0.5 | General traits (default) |
+| 0.3 | Experimental/weak signals |
+
+## Injection Settings
+
+### template
+
+Format string for injecting the trait into prompts. Use `{{value}}` placeholder:
+
+```json
+{
+  "key": "name",
+  "injection": {
+    "template": "The user's name is {{value}}. Address them by name when appropriate."
+  }
+}
+```
+
+For array values:
+```json
+{
+  "key": "interests",
+  "injection": {
+    "template": "User is interested in: {{value}}"
+  }
+}
+// Renders as: "User is interested in: Python, ML, DevOps"
+```
+
+### priority
+
+Higher priority traits appear earlier in the injected context:
+
+| Priority | Typical Traits |
+|----------|---------------|
+| 10 | Name, language |
+| 8-9 | Communication style |
+| 5-7 | Expertise, preferences |
+| 1-4 | Interests, goals |
+
+## Full Example
+
+```json
+{
+  "traits": [
+    {
+      "key": "role",
+      "label": "Professional Role",
+      "description": "User's job title or professional role",
+      "valueType": "string",
+      "category": "identity",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Extract job title, role, or profession if mentioned",
+        "confidenceThreshold": 0.8
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User works as a {{value}}.",
+        "priority": 8
+      }
+    },
+    {
+      "key": "tech_stack",
+      "label": "Technology Stack",
+      "description": "Technologies and tools the user works with",
+      "valueType": "array",
+      "category": "context",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Identify programming languages, frameworks, and tools mentioned",
+        "confidenceThreshold": 0.6
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User's tech stack includes: {{value}}",
+        "priority": 6
+      }
+    }
+  ]
+}
+```
+

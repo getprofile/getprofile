@@ -1,0 +1,115 @@
+---
+title: Adaptive Tutor / Learning Companion
+description: "AI tutors that adapt to each student's learning style and progress"
+---
+
+## Scenario
+
+AI tutor for language, math, or coding inside a learning platform that needs to adapt to individual student needs.
+
+## Extraction
+
+From student questions, answers, and exercises, GetProfile keeps traits like:
+
+- `skill_level` per topic: vocab, grammar, integrals, recursion…
+- `learning_style`: prefers step-by-step vs big-picture explanations
+- `common_mistakes[]`: typical grammar/calc errors
+- `motivation_pattern`: often gives up early vs pushes through
+
+It updates these as the student improves or regresses.
+
+## Injection
+
+Before each tutoring LLM call, GetProfile injects:
+
+- Profile summary:
+  - "Intermediate grammar, weak with conditionals; prefers concrete examples; often confused by abstract explanations."
+
+- A few **targeted memories**:
+  - last explanation that worked,
+  - last couple of failed attempts on the same concept.
+
+## Impact
+
+The tutor can:
+
+- Choose the right difficulty and explanation style.
+- Remind the student of previous successful strategies.
+- Avoid re-trying explanations that already failed.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': "student-456",
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Tutoring session
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are a patient tutor. Adapt your explanations to the student\'s learning style.',
+},
+{
+role: 'user',
+content: 'I still don\'t understand conditional statements in Python.',
+},
+],
+});
+// GetProfile injects student's skill level, learning style, and past attempts
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "skill_level": {
+    "type": "object",
+    "description": "Skill level per topic",
+    "additionalProperties": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "advanced"]
+    }
+  },
+  "learning_style": {
+    "type": "string",
+    "enum": ["step-by-step", "big-picture", "visual", "hands-on"],
+    "description": "Preferred learning approach"
+  },
+  "common_mistakes": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Topics or concepts the student frequently struggles with"
+  },
+  "motivation_pattern": {
+    "type": "string",
+    "enum": ["persistent", "gives-up-early", "needs-encouragement"],
+    "description": "How the student handles challenges"
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Memories API" icon="brain" href="/api-reference/memories/create">
+    Store and retrieve learning milestones and breakthroughs
+  </Card>
+  <Card title="Traits API" icon="sliders" href="/api-reference/traits/update">
+    Update skill levels as students progress
+  </Card>
+</CardGroup>

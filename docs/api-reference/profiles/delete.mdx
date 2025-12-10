@@ -1,0 +1,47 @@
+---
+title: Delete Profile
+description: "Delete a user profile and all associated data"
+api: DELETE /api/profiles/{id}
+---
+
+## Overview
+
+Deletes a user profile and cascade-deletes all associated data:
+
+- Traits
+- Memories
+- Messages
+
+This endpoint is designed for GDPR right-to-erasure compliance.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID (internal UUID or external ID)
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true,
+  "deleted": {
+    "traits": 8,
+    "memories": 24,
+    "messages": 156
+  }
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl -X DELETE https://api.yourserver.com/api/profiles/user-123 \
+  -H "Authorization: Bearer gp_your_key"
+```
+
+<Warning>
+  This action is irreversible. All profile data will be permanently deleted.
+</Warning>

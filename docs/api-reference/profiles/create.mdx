@@ -1,0 +1,44 @@
+---
+title: Create or Get Profile
+description: "Ensure a profile exists for an external user ID"
+api: POST /api/profiles
+---
+
+## Overview
+
+Creates a new profile for the provided `externalId`, or returns the existing profile if it was already created.
+
+This endpoint is idempotent and safe to call on every login or signup event.
+
+## Request Body
+
+<ParamField body="externalId" type="string" required>
+  Your application's user identifier. This becomes the profile's `externalId`.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "profile": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "externalId": "user-123",
+    "summary": null,
+    "summaryVersion": 0,
+    "summaryUpdatedAt": null,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl https://api.yourserver.com/api/profiles \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{ "externalId": "user-123" }'
+```

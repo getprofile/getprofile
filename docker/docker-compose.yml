@@ -1,0 +1,58 @@
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    env_file:
+      - ../.env
+    ports:
+      - "3100:3100"
+    environment:
+      # Database
+      - DATABASE_URL=postgresql://getprofile:password@db:5432/getprofile
+
+      # LLM Provider (for extraction/summarization)
+      - LLM_API_KEY=${LLM_API_KEY}
+      
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-${LLM_API_KEY}}
+
+      # Upstream LLM (defaults to LLM_API_KEY)
+      - UPSTREAM_API_KEY=${UPSTREAM_API_KEY:-${LLM_API_KEY}}
+      - UPSTREAM_BASE_URL=${UPSTREAM_BASE_URL:-https://api.openai.com/v1}
+
+      # Note: GETPROFILE_API_KEY loaded from env_file (../.env)
+      # If set, clients must provide matching Bearer token in Authorization header
+
+      # Retention and summary tuning (optional)
+      - GETPROFILE_MAX_MESSAGES=${GETPROFILE_MAX_MESSAGES:-1000}
+      - GETPROFILE_SUMMARY_INTERVAL=${GETPROFILE_SUMMARY_INTERVAL:-60}
+
+      # Rate limiting (optional, 0 to disable)
+      - GETPROFILE_RATE_LIMIT=${GETPROFILE_RATE_LIMIT:-60}
+
+      # Server
+      - PORT=${PORT:-3100}
+      - HOST=${HOST:-0.0.0.0}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=getprofile
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=getprofile
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U getprofile"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+

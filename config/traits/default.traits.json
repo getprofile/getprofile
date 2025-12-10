@@ -1,0 +1,143 @@
+{
+  "traits": [
+    {
+      "key": "preferred_language",
+      "label": "Preferred Language",
+      "description": "The language the user prefers for communication",
+      "valueType": "string",
+      "category": "communication",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Detect the primary language the user communicates in",
+        "confidenceThreshold": 0.7
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User prefers to communicate in {{value}}.",
+        "priority": 10
+      }
+    },
+    {
+      "key": "communication_style",
+      "label": "Communication Style",
+      "description": "How the user prefers to receive information",
+      "valueType": "enum",
+      "enumValues": ["formal", "casual", "technical", "simple"],
+      "category": "communication",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Assess if user prefers formal, casual, technical, or simple communication",
+        "confidenceThreshold": 0.6
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User prefers {{value}} communication style.",
+        "priority": 9
+      }
+    },
+    {
+      "key": "detail_preference",
+      "label": "Detail Preference",
+      "description": "How much detail the user wants in responses",
+      "valueType": "enum",
+      "enumValues": ["brief", "moderate", "detailed"],
+      "category": "communication",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Determine if user prefers brief/concise, moderate, or detailed/comprehensive responses",
+        "confidenceThreshold": 0.5
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User prefers {{value}} responses.",
+        "priority": 8
+      }
+    },
+    {
+      "key": "name",
+      "label": "Name",
+      "description": "User's name or preferred name",
+      "valueType": "string",
+      "category": "identity",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Extract the user's name if they mention it",
+        "confidenceThreshold": 0.9
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User's name is {{value}}.",
+        "priority": 10
+      }
+    },
+    {
+      "key": "expertise_level",
+      "label": "Expertise Level",
+      "description": "User's technical/domain expertise",
+      "valueType": "enum",
+      "enumValues": ["beginner", "intermediate", "advanced", "expert"],
+      "category": "context",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Assess user's expertise level based on vocabulary, questions asked, and context",
+        "confidenceThreshold": 0.5
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User has {{value}} expertise level.",
+        "priority": 7
+      }
+    },
+    {
+      "key": "timezone",
+      "label": "Timezone",
+      "description": "User's timezone for time-sensitive information",
+      "valueType": "string",
+      "category": "context",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Detect timezone if user mentions location, time, or scheduling",
+        "confidenceThreshold": 0.8
+      },
+      "injection": {
+        "enabled": false,
+        "priority": 0
+      }
+    },
+    {
+      "key": "interests",
+      "label": "Interests",
+      "description": "Topics and areas the user is interested in",
+      "valueType": "array",
+      "category": "preferences",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Identify recurring topics, hobbies, or professional interests mentioned by user",
+        "confidenceThreshold": 0.4
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User is interested in: {{value}}.",
+        "priority": 5
+      }
+    },
+    {
+      "key": "current_goals",
+      "label": "Current Goals",
+      "description": "What the user is currently trying to achieve",
+      "valueType": "array",
+      "category": "context",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Identify any goals, projects, or objectives the user is working toward",
+        "confidenceThreshold": 0.5
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User's current goals: {{value}}.",
+        "priority": 6
+      }
+    }
+  ]
+}
+

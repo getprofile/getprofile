@@ -1,0 +1,57 @@
+---
+title: Update Trait
+description: "Create or update a trait"
+api: PUT /api/profiles/{id}/traits/{key}
+---
+
+## Overview
+
+Creates a new trait or updates an existing one. Manually set traits have `source: "manual"` and are preserved during automatic extraction.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+<ParamField path="key" type="string" required>
+  Trait key (e.g., `name`, `expertise_level`)
+</ParamField>
+
+## Request Body
+
+<ParamField body="value" type="any" required>
+  The trait value (type must match schema)
+</ParamField>
+
+<ParamField body="confidence" type="number">
+  Confidence score (0.0-1.0). Defaults to 1.0 for manual updates.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "trait": {
+    "key": "name",
+    "value": "Alexander",
+    "valueType": "string",
+    "category": "identity",
+    "confidence": 1.0,
+    "source": "manual",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-15T00:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl -X PUT https://api.yourserver.com/api/profiles/user-123/traits/name \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "Content-Type: application/json" \
+  -d '{"value": "Alexander", "confidence": 1.0}'
+```

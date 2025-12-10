@@ -1,0 +1,137 @@
+---
+title: Authentication
+description: "Authenticate with the GetProfile API"
+---
+
+## API Key (Optional)
+
+GetProfile uses a simple API key authentication system. For self-hosted deployments, you can optionally protect your proxy with an API key.
+
+## Configuration
+
+Set the `GETPROFILE_API_KEY` environment variable:
+
+```bash
+GETPROFILE_API_KEY=your-secret-key-here
+```
+
+If not set, the proxy will accept all requests (useful for local development).
+
+## Headers
+
+### Required Headers
+
+| Header          | Description                                                 |
+| --------------- | ----------------------------------------------------------- |
+| `Authorization` | Bearer token (only required if `GETPROFILE_API_KEY` is set) |
+
+### Optional Headers
+
+| Header                | Description                        |
+| --------------------- | ---------------------------------- |
+| `X-GetProfile-Id`     | Your app's user identifier         |
+| `X-Upstream-Key`      | API key for upstream LLM provider  |
+| `X-GetProfile-Traits` | Per-request trait overrides (JSON) |
+
+## Authentication Methods
+
+### Bearer Token (if API key is configured)
+
+```bash
+curl http://localhost:3100/v1/chat/completions \
+  -H "Authorization: Bearer your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-5", "messages": [...]}'
+```
+
+### No Authentication (local development)
+
+If `GETPROFILE_API_KEY` is not set, you can make requests without authentication:
+
+```bash
+curl http://localhost:3100/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-5", "messages": [...]}'
+```
+
+### SDK Usage
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY || 'not-needed-for-local',
+baseURL: 'http://localhost:3100/v1',
+defaultHeaders: {
+'X-GetProfile-Id': 'user-123',
+'X-Upstream-Key': 'sk-your-openai-key',
+},
+});
+
+````
+
+```python Python
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    api_key=os.getenv("GETPROFILE_API_KEY", "not-needed-for-local"),
+    base_url="http://localhost:3100/v1",
+    default_headers={
+        "X-GetProfile-Id": "user-123",
+        "X-Upstream-Key": "sk-your-openai-key",
+    },
+)
+````
+
+</CodeGroup>
+
+## User Identification
+
+The `X-GetProfile-Id` header identifies which user the request is for. This can be:
+
+- Your app's user ID
+- A session ID
+- Any stable identifier for the user
+
+Alternatively, you can use:
+
+- `user` field in request body (OpenAI standard)
+- `metadata.profile_id` in request body
+
+```typescript
+// Option 1: Header (recommended)
+headers: { 'X-GetProfile-Id': 'user-123' }
+
+// Option 2: Body field
+body: { user: 'user-123', ... }
+
+// Option 3: Metadata
+body: { metadata: { profile_id: 'user-123' }, ... }
+```
+
+## Upstream Authentication
+
+The `X-Upstream-Key` header provides the API key for the upstream LLM provider:
+
+```bash
+curl http://localhost:3100/v1/chat/completions \
+  -H "Authorization: Bearer ${GETPROFILE_API_KEY:-not-needed}" \
+  -H "X-Upstream-Key: sk-your-openai-key" \
+  -H "X-GetProfile-Id: user-123" \
+  ...
+```
+
+<Info>
+  If you configure a default upstream key in your GetProfile settings,
+  `X-Upstream-Key` is optional.
+</Info>
+
+## Error Responses
+
+| Status | Error             | Description                                          |
+| ------ | ----------------- | ---------------------------------------------------- |
+| 401    | `missing_api_key` | No Authorization header (when API key is configured) |
+| 401    | `invalid_api_key` | API key does not match `GETPROFILE_API_KEY`          |
+| 400    | `missing_user_id` | No user identifier provided                          |

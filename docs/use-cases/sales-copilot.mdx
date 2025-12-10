@@ -1,0 +1,170 @@
+---
+title: Sales / Success Copilot With Account & Contact Profiles
+description: "AI copilots in CRM tools with intelligent account and contact context"
+---
+
+## Scenario
+
+AI copilot inside a CRM / sales engagement tool that needs to remember account and contact details across interactions.
+
+## Extraction
+
+From emails, call notes, support tickets, and CRM events, GetProfile extracts traits for:
+
+### Contact-level traits:
+
+- `role`, `seniority`, `decision_power`
+- `communication_style`: short & blunt vs narrative
+- `topics_that_resonate[]`: ROI, compliance, integrations
+- `objections[]`: price, migration risk, security
+
+### Account-level traits:
+
+- `company_size`, `industry`
+- `tech_stack[]`
+- `deal_stage`, `champions[]`, `blockers[]`
+
+No salesperson tags this by hand; it's distilled from interaction logs.
+
+## Injection
+
+When a rep asks:
+
+> "Draft a follow-up email to Sarah about the pilot."
+
+The copilot's LLM call goes through GetProfile:
+
+- GetProfile injects contact + account profile:
+  - "Sarah: VP Eng, high decision power, cares about migration risk and reliability; previously expressed worry about vendor lock-in."
+
+- It injects a few relevant memories:
+  - last meeting summary,
+  - her exact wording on concerns.
+
+## Impact
+
+The copilot:
+
+- Frames messages around the right value props,
+- Remembers objections over weeks/months,
+- Tailors tone and detail to the specific contact.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': `${accountId}:${contactId}`, // Composite ID
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Sales copilot request
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are a sales assistant. Draft emails that address the contact\'s specific concerns and preferences.',
+},
+{
+role: 'user',
+content: 'Draft a follow-up email to Sarah about the pilot program.',
+},
+],
+});
+// GetProfile injects Sarah's profile, account context, and past interactions
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "role": {
+    "type": "string",
+    "description": "Contact's job role"
+  },
+  "seniority": {
+    "type": "string",
+    "enum": ["junior", "mid", "senior", "executive"],
+    "description": "Seniority level"
+  },
+  "decision_power": {
+    "type": "string",
+    "enum": ["low", "medium", "high", "decision-maker"],
+    "description": "Influence on purchasing decisions"
+  },
+  "communication_style": {
+    "type": "string",
+    "enum": ["concise", "detailed", "narrative"],
+    "description": "Preferred communication approach"
+  },
+  "topics_that_resonate": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Topics that generate positive responses"
+  },
+  "objections": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Common concerns or objections raised"
+  },
+  "company_size": {
+    "type": "string",
+    "enum": ["startup", "smb", "mid-market", "enterprise"],
+    "description": "Size of the account company"
+  },
+  "industry": {
+    "type": "string",
+    "description": "Primary industry of the account"
+  },
+  "tech_stack": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Key technologies or tools the account uses"
+  },
+  "deal_stage": {
+    "type": "string",
+    "enum": ["prospecting", "qualification", "proposal", "negotiation", "closed"],
+    "description": "Current stage in the sales process"
+  },
+  "champions": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Account contacts advocating for the deal"
+  },
+  "blockers": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Account contacts slowing or blocking the deal"
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Profiles API" icon="user" href="/api-reference/profiles/get">
+    Retrieve contact and account profiles programmatically
+  </Card>
+  <Card title="SDK Integration" icon="js" href="/client-libraries/javascript">
+    Build custom sales workflows with the JavaScript SDK
+  </Card>
+</CardGroup>

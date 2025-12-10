@@ -1,0 +1,36 @@
+---
+title: Delete Trait
+description: "Delete a trait from a profile"
+api: DELETE /api/profiles/{id}/traits/{key}
+---
+
+## Overview
+
+Removes a trait from a user profile.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+<ParamField path="key" type="string" required>
+  Trait key to delete
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+curl -X DELETE https://api.yourserver.com/api/profiles/user-123/traits/name \
+  -H "Authorization: Bearer gp_your_key"
+```

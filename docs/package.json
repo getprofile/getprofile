@@ -1,0 +1,14 @@
+{
+	"name": "@getprofile/docs",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+	  "dev": "mint dev --port 3002",
+	  "test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"devDependencies": {
+	  "mint": "^4.2.208"
+	}
+  }
+  

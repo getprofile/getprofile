@@ -1,0 +1,247 @@
+---
+title: Configuration Overview
+description: "Configure GetProfile for your environment - works with OpenAI, Anthropic, and any OpenAI-compatible provider"
+---
+
+## Configuration File
+
+GetProfile uses a JSON configuration file. Create `config/getprofile.json`:
+
+```json
+{
+  "database": {
+    "url": "${DATABASE_URL}",
+    "poolSize": 10
+  },
+
+  "llm": {
+    "provider": "openai",
+    "apiKey": "${LLM_API_KEY}",
+    "model": "gpt-5-mini"
+  },
+
+  "upstream": {
+    "provider": "openai",
+    "apiKey": "${LLM_API_KEY}"
+  },
+
+  "memory": {
+    "maxMessagesPerProfile": 1000,
+    "extractionEnabled": true,
+    "summarizationInterval": 60
+  },
+
+  "traits": {
+    "schemaPath": "./config/traits/default.traits.json",
+    "extractionEnabled": true,
+    "defaultTraitsEnabled": true,
+    "allowRequestOverride": true
+  },
+
+  "server": {
+    "port": 3100,
+    "host": "0.0.0.0"
+  }
+}
+```
+
+<Note>
+  **Provider-Agnostic**: GetProfile works with OpenAI, Anthropic, OpenRouter, or
+  any OpenAI-compatible API. Just change the `provider` field and model name.
+</Note>
+
+## Environment Variables
+
+<Info>
+  **Minimalistic Approach**: GetProfile only uses environment variables for
+  **secrets** and **high-level server settings**. All other configuration goes
+  in `config/getprofile.json`.
+</Info>
+
+Configuration values can reference environment variables using `${VAR_NAME}` syntax.
+
+### Required Secrets
+
+| Variable       | Description                                                                    |
+| -------------- | ------------------------------------------------------------------------------ |
+| `DATABASE_URL` | PostgreSQL connection string                                                   |
+| `LLM_API_KEY`  | API key for your LLM provider (works with OpenAI, Anthropic, OpenRouter, etc.) |
+
+**Provider-specific keys** (optional, fallback to `LLM_API_KEY`):
+
+- `OPENAI_API_KEY` - OpenAI-specific key
+- `ANTHROPIC_API_KEY` - Anthropic-specific key
+
+### Server Settings
+
+| Variable | Default | Description       |
+| -------- | ------- | ----------------- |
+| `PORT`   | 3100    | Proxy server port |
+| `HOST`   | 0.0.0.0 | Proxy server host |
+
+### Optional Secrets
+
+| Variable             | Default | Description                      |
+| -------------------- | ------- | -------------------------------- |
+| `GETPROFILE_API_KEY` | -       | API key for proxy authentication |
+
+<Info>
+  **Environment Variable Support**: All configuration can be set via environment variables for backward compatibility and deployment flexibility. The config file (`config/getprofile.json`) is the recommended approach for structured configuration, but environment variables take precedence when both are set.
+
+  Environment variables that map to config file settings:
+  - `UPSTREAM_API_KEY`, `UPSTREAM_BASE_URL`, `UPSTREAM_PROVIDER` → `upstream` section
+  - `GETPROFILE_MAX_MESSAGES` → `memory.maxMessagesPerProfile`
+  - `GETPROFILE_SUMMARY_INTERVAL` → `memory.summarizationInterval`
+  - `LLM_API_KEY`, `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL` → `llm` section
+  - `PORT`, `HOST` → `server` section
+
+  Priority order: Environment variables > Config file > Defaults
+</Info>
+
+## Configuration Sections
+
+<AccordionGroup>
+  <Accordion title="database" icon="database">
+    ```json
+    {
+      "database": {
+        "url": "postgresql://user:pass@localhost:5432/getprofile",
+        "poolSize": 10
+      }
+    }
+    ```
+    
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | `url` | string | PostgreSQL connection string |
+    | `poolSize` | number | Connection pool size (default: 10) |
+  </Accordion>
+  
+  <Accordion title="llm" icon="brain">
+    LLM used for internal processing (extraction, summarization).
+
+    **OpenAI Example:**
+    ```json
+    {
+      "llm": {
+        "provider": "openai",
+        "apiKey": "${LLM_API_KEY}",
+        "model": "gpt-5-mini"
+      }
+    }
+    ```
+
+    **Anthropic Example:**
+    ```json
+    {
+      "llm": {
+        "provider": "anthropic",
+        "apiKey": "${ANTHROPIC_API_KEY}",
+        "model": "claude-4-5-sonnet"
+      }
+    }
+    ```
+
+    **OpenRouter Example:**
+    ```json
+    {
+      "llm": {
+        "provider": "custom",
+        "apiKey": "${LLM_API_KEY}",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "model": "anthropic/claude-4.5-sonnet"
+      }
+    }
+    ```
+
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | `provider` | string | `openai`, `anthropic`, or `custom` |
+    | `apiKey` | string | API key for the provider |
+    | `model` | string | Model to use for extraction |
+    | `baseUrl` | string | Custom API endpoint (for custom providers) |
+
+  </Accordion>
+  
+  <Accordion title="upstream" icon="arrow-up-right">
+    LLM provider where chat completion requests are forwarded. Can be different from the LLM used for extraction.
+
+    **Same as LLM (default):**
+    ```json
+    {
+      "upstream": {
+        "provider": "openai",
+        "apiKey": "${LLM_API_KEY}"
+      }
+    }
+    ```
+
+    **Different provider:**
+    ```json
+    {
+      "upstream": {
+        "provider": "anthropic",
+        "apiKey": "${ANTHROPIC_API_KEY}"
+      }
+    }
+    ```
+
+    **Per-request override via headers:**
+    Clients can override the upstream provider using headers:
+    - `X-Upstream-Provider`: `openai`, `anthropic`, or `custom`
+    - `X-Upstream-Key`: API key for that provider
+    - `X-Upstream-Base-URL`: Custom base URL (optional)
+
+  </Accordion>
+  
+  <Accordion title="memory" icon="memory">
+    ```json
+    {
+      "memory": {
+        "maxMessagesPerProfile": 1000,
+        "extractionEnabled": true,
+        "summarizationInterval": 60,
+        "retentionDays": null
+      }
+    }
+    ```
+    
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | `maxMessagesPerProfile` | number | Soft limit triggering cleanup |
+    | `extractionEnabled` | boolean | Enable memory extraction |
+    | `summarizationInterval` | number | Minutes between summary updates |
+    | `retentionDays` | number | Auto-delete old messages (null = disabled) |
+  </Accordion>
+  
+  <Accordion title="traits" icon="tags">
+    ```json
+    {
+      "traits": {
+        "schemaPath": "./config/traits/default.traits.json",
+        "extractionEnabled": true,
+        "defaultTraitsEnabled": true,
+        "allowRequestOverride": true
+      }
+    }
+    ```
+    
+    | Field | Type | Description |
+    |-------|------|-------------|
+    | `schemaPath` | string | Path to trait schema JSON |
+    | `extractionEnabled` | boolean | Enable trait extraction |
+    | `defaultTraitsEnabled` | boolean | Include default traits |
+    | `allowRequestOverride` | boolean | Allow per-request traits |
+  </Accordion>
+  
+  <Accordion title="server" icon="server">
+    ```json
+    {
+      "server": {
+        "port": 3100,
+        "host": "0.0.0.0"
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,139 @@
+---
+title: How It Works
+description: "Understanding GetProfile's architecture and data flow"
+---
+
+## Architecture Overview
+
+GetProfile provides the **LLM Proxy** for automatic, transparent integration with your existing OpenAI-compatible applications.
+
+### Proxy Flow (Automatic)
+
+The proxy sits between your application and the LLM provider, enriching every request with user context automatically.
+
+```
+┌───────────────┐     ┌──────────────────────────────────┐     ┌─────────────────┐
+│               │     │         GetProfile Proxy         │     │                 │
+│   Your App    │────▶│                                  │────▶│   LLM Provider  │
+│               │     │  1. Load user profile            │     │   (OpenAI, etc) │
+│               │     │  2. Retrieve relevant memories   │     │                 │
+└───────────────┘     │  3. Inject context into prompt   │     └─────────────────┘
+                      │  4. Forward to LLM               │
+                      │  5. Stream response back         │
+                      │  6. Extract traits (background)  │
+                      └──────────────────────────────────┘
+```
+
+## Request Flow
+
+<Steps>
+  <Step title="Request Received">
+    Your app sends a chat completion request to the GetProfile proxy with a user
+    identifier.
+  </Step>
+
+<Step title="Profile Loaded">
+  GetProfile looks up the user's profile using the `X-GetProfile-Id` header or
+  `user` field.
+</Step>
+
+<Step title="Context Assembled">
+  
+  The proxy gathers:
+  
+  - User traits (name, preferences, expertise level)
+  - Profile summary
+  - Relevant memories from past conversations
+
+</Step>
+
+<Step title="Prompt Enriched">
+  Context is injected into the system message: ``` ## User Profile Alex is an
+  experienced software engineer who prefers concise, technical explanations. ##
+  User Attributes - Communication style: technical - Expertise level: advanced
+  ## Relevant Context - User mentioned working on a microservices migration last
+  week ```
+</Step>
+
+<Step title="Request Forwarded">
+  The enriched request is sent to the upstream LLM provider.
+</Step>
+
+<Step title="Response Streamed">
+  The LLM response is streamed back to your app in real-time.
+</Step>
+
+  <Step title="Background Processing">
+    
+    After the response completes, GetProfile asynchronously: 
+    
+    - Extracts new traits from the conversation 
+    - Stores relevant memories
+    - Updates the profile summary if needed
+
+  </Step>
+</Steps>
+
+## Three-Layer Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        PRESENTATION LAYER                       │
+├───────────────┬───────────────┬─────────────────────────────────┤
+│   LLM Proxy   │  Profile API  │            Dashboard            │
+│  (automatic)  │     (SDK or REST)    │       (Cloud version only)      │
+└───────────────┴───────────────┴─────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CORE ENGINE LAYER                           │
+├────────────────────────────┬───────────────────────────────────────┤
+│      Memory Engine         │         Trait Engine                   │
+│  - Message storage         │  - Schema management                   │
+│  - Fact extraction         │  - Trait extraction                    │
+│  - Memory retrieval        │  - Confidence scoring                  │
+│  - Summarization           │  - Profile summary generation          │
+└────────────────────────────┴───────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────────────┐
+│                         STORAGE LAYER                                │
+├────────────────────────────┬───────────────────────────────────────┤
+│      PostgreSQL            │         (Optional) Redis               │
+│  - Profiles                │  - Profile summary cache               │
+│  - Traits                  │  - Hot memory cache                    │
+│  - Messages                │  - Rate limiting                       │
+│  - Memories (pgvector)     │                                        │
+└────────────────────────────┴───────────────────────────────────────┘
+```
+
+All integration methods (Proxy, API, Dashboard) share the same core engine and storage, ensuring consistent behavior regardless of how you integrate.
+
+## Key Components
+
+<AccordionGroup>
+  <Accordion title="Memory Engine" icon="brain">
+    Responsible for: - Storing conversation messages - Extracting facts and
+    memories using LLM - Retrieving relevant memories for context - Generating
+    profile summaries
+  </Accordion>
+
+<Accordion title="Trait Engine" icon="tags">
+  Responsible for: - Loading trait schemas (default + custom) - Extracting
+  structured traits from conversations - Managing confidence scores - Building
+  injection context
+</Accordion>
+
+  <Accordion title="Profile Manager" icon="user">
+    Orchestrates: - Profile creation and lookup - Context assembly for requests
+    - Coordinating memory and trait engines
+  </Accordion>
+</AccordionGroup>
+
+## Choosing an Integration
+
+| If you need...                     | Use                                            |
+| ---------------------------------- | ---------------------------------------------- |
+| Automatic memory on every LLM call | [LLM Proxy](/openai-compatibility)             |
+| Backend integration in Node.js     | [JavaScript SDK](/client-libraries/javascript) |
+| REST API for custom clients        | [Profile API](/api-reference/overview)         |
+
+See the [Integration Options](/integrations/overview) guide for detailed comparison.

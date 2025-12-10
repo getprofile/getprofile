@@ -1,0 +1,116 @@
+---
+title: Game / NPC Personalization
+description: "AI-driven NPCs with personalized dialogue and dynamic quests"
+---
+
+## Scenario
+
+Online game with AI-driven NPC dialogue and dynamic quests that adapt to each player's style and choices.
+
+## Extraction
+
+From gameplay events and chat with NPCs, GetProfile tracks:
+
+- `play_style`: stealthy, aggressive, completionist, explorer
+- `risk_tolerance`: likes high-risk high-reward vs safe paths
+- `story_preferences[]`: political intrigue, romance, horror, humor
+- `moral_alignment`: tends to spare enemies vs ruthless choices
+
+All learned from in-game decisions and occasional user text.
+
+## Injection
+
+Before generating NPC dialog or a quest:
+
+- Game server calls the LLM through GetProfile:
+  - It injects the player profile:
+    - "Player is an explorer completionist who loves political intrigue, hates horror, usually plays 'good' moral options."
+
+- It injects a few **key story memories**:
+  - important past quests,
+  - big choices they made.
+
+## Impact
+
+- NPCs comment on the _right_ past events.
+- Quest offers and story beats match their style and morals.
+- Same system works across multiple AI features (quests, barks, codex entries) via a shared profile.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': playerId,
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// NPC dialogue generation
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are an NPC in a fantasy game. Reference the player\'s past choices and match their preferred story style.',
+},
+{
+role: 'user',
+content: 'Generate dialogue for the merchant NPC when the player approaches.',
+},
+],
+});
+// GetProfile injects player's play style, story preferences, and key past events
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "play_style": {
+    "type": "string",
+    "enum": ["stealthy", "aggressive", "completionist", "explorer", "speedrunner"],
+    "description": "How the player approaches gameplay"
+  },
+  "risk_tolerance": {
+    "type": "string",
+    "enum": ["low", "medium", "high"],
+    "description": "Player's preference for risky vs safe gameplay"
+  },
+  "story_preferences": {
+    "type": "array",
+    "items": {
+      "type": "string",
+      "enum": ["political-intrigue", "romance", "horror", "humor", "drama", "mystery"]
+    },
+    "description": "Story themes the player enjoys"
+  },
+  "moral_alignment": {
+    "type": "string",
+    "enum": ["good", "neutral", "evil", "chaotic"],
+    "description": "Player's typical moral choices"
+  },
+  "quest_completion_rate": {
+    "type": "number",
+    "description": "Percentage of quests the player completes"
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Memories API" icon="brain" href="/api-reference/memories/create">
+    Store quest completions and significant player choices
+  </Card>
+  <Card title="Traits API" icon="sliders" href="/api-reference/traits/update">
+    Update player traits based on gameplay events
+  </Card>
+</CardGroup>

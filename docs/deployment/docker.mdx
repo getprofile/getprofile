@@ -1,0 +1,235 @@
+---
+title: Docker Deployment
+description: "Deploy GetProfile with Docker Compose"
+---
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/getprofile/getprofile.git
+cd getprofile
+
+# Configure environment
+cp .env.docker.example .env
+# Edit .env with your API keys
+
+# Start all services (source .env to handle long API keys correctly)
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+```
+
+## Services
+
+The Docker Compose setup includes:
+
+| Service  | Port | Description              |
+| -------- | ---- | ------------------------ |
+| `server` | 3100 | GetProfile LLM proxy     |
+| `db`     | 5432 | PostgreSQL with pgvector |
+
+## docker-compose.yml
+
+The actual docker-compose.yml is located at `docker/docker-compose.yml`:
+
+```yaml
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    ports:
+      - "3100:3100"
+    environment:
+      # Database
+      - DATABASE_URL=postgresql://getprofile:password@db:5432/getprofile
+
+      # LLM Provider (for extraction/summarization)
+      - LLM_API_KEY=${LLM_API_KEY}
+
+      # Upstream LLM (defaults to LLM_API_KEY)
+      - UPSTREAM_API_KEY=${UPSTREAM_API_KEY:-${LLM_API_KEY}}
+      - UPSTREAM_BASE_URL=${UPSTREAM_BASE_URL:-https://api.openai.com/v1}
+
+      # Server auth (optional - if not set, allows all requests)
+      - GETPROFILE_API_KEY=${GETPROFILE_API_KEY:-}
+
+      # Retention and summary tuning (optional)
+      - GETPROFILE_MAX_MESSAGES=${GETPROFILE_MAX_MESSAGES:-1000}
+      - GETPROFILE_SUMMARY_INTERVAL=${GETPROFILE_SUMMARY_INTERVAL:-60}
+
+      # Rate limiting (optional, 0 to disable)
+      - GETPROFILE_RATE_LIMIT=${GETPROFILE_RATE_LIMIT:-60}
+
+      # Server
+      - PORT=${PORT:-3100}
+      - HOST=${HOST:-0.0.0.0}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      - POSTGRES_USER=getprofile
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=getprofile
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U getprofile"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+```
+
+## Environment Variables
+
+Create a `.env` file in the repository root using `.env.docker.example` as a template:
+
+```bash
+# Required
+LLM_API_KEY=sk-your-key-here
+
+# Optional - Server Authentication
+GETPROFILE_API_KEY=your-secret-key-here  # If not set, allows all requests
+
+# Optional - Upstream LLM Configuration
+UPSTREAM_API_KEY=sk-different-key  # Defaults to LLM_API_KEY
+UPSTREAM_BASE_URL=https://api.openai.com/v1
+
+# Optional - Message Retention and Summary
+GETPROFILE_MAX_MESSAGES=1000  # Max messages per profile
+GETPROFILE_SUMMARY_INTERVAL=60  # Summary refresh interval (minutes)
+
+# Optional - Rate Limiting
+GETPROFILE_RATE_LIMIT=60  # Requests per minute (0 to disable)
+
+# Optional - Server Configuration
+PORT=3100
+HOST=0.0.0.0
+```
+
+See [docker/README.md](https://github.com/getprofile/getprofile/blob/main/docker/README.md) for complete documentation.
+
+## Commands
+
+```bash
+# Start services (source .env to handle long API keys correctly)
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+
+# View logs
+docker compose -f docker/docker-compose.yml logs -f server
+
+# Stop services
+docker compose -f docker/docker-compose.yml down
+
+# Stop and remove volumes (deletes data!)
+docker compose -f docker/docker-compose.yml down -v
+
+# Restart after .env changes
+docker compose -f docker/docker-compose.yml down
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+
+# Rebuild after code changes
+docker compose -f docker/docker-compose.yml build --no-cache
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+```
+
+## Production Considerations
+
+<Warning>
+  The default docker-compose.yml is for development. For production:
+</Warning>
+
+### Security
+
+- Change default database password
+- Use secrets management for API keys
+- Enable TLS/HTTPS
+- Set up proper network isolation
+
+### Persistence
+
+- Use external PostgreSQL for production
+- Set up database backups
+- Consider Redis for caching
+
+### Scaling
+
+```yaml
+services:
+  server:
+    deploy:
+      replicas: 3
+    # ... rest of config
+```
+
+### Health Checks
+
+```bash
+# Check server health
+curl http://localhost:3100/health
+
+# Expected response
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+## Troubleshooting
+
+### Environment Variables Not Loading
+
+If you experience issues with environment variables (especially long API keys) appearing truncated in containers:
+
+**Problem**: Docker Compose may not correctly parse long API keys from the `.env` file directly, causing errors like "UPSTREAM_API_KEY or LLM_API_KEY environment variable is required".
+
+**Solution**: Source the `.env` file and export variables before running docker compose:
+
+```bash
+# Stop containers
+docker compose -f docker/docker-compose.yml down
+
+# Source .env and start containers
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+```
+
+**Verification**: Check that the API key is loaded correctly:
+
+```bash
+docker compose -f docker/docker-compose.yml exec server sh -c 'echo "API Key length: ${#LLM_API_KEY}"'
+```
+
+You should see the correct length (e.g., 164 characters for OpenAI keys), not just 6.
+
+### Database Migrations Not Running
+
+If the server fails to start with migration errors:
+
+```bash
+# Check server logs
+docker compose -f docker/docker-compose.yml logs server
+
+# Manually run migrations
+docker compose -f docker/docker-compose.yml exec server sh -c "cd /app/packages/db && pnpm drizzle-kit migrate"
+```
+
+### Container Build Failures
+
+If you encounter module resolution errors during build:
+
+```bash
+# Clean rebuild
+docker compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml build --no-cache
+source .env && export LLM_API_KEY && docker compose -f docker/docker-compose.yml up -d
+```
+
+For more troubleshooting help, see [docker/README.md](https://github.com/getprofile/getprofile/blob/main/docker/README.md).

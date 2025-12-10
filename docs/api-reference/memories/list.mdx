@@ -1,0 +1,66 @@
+---
+title: List Memories
+description: "List memories for a profile"
+api: GET /api/profiles/{id}/memories
+---
+
+## Overview
+
+Returns memories associated with a user profile, sorted by importance and recency.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Profile ID
+</ParamField>
+
+## Query Parameters
+
+<ParamField query="type" type="string">
+  Filter by memory type: `fact`, `preference`, `event`, `context`
+</ParamField>
+
+<ParamField query="limit" type="number" default="20">
+  Maximum number of memories to return
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "memories": [
+    {
+      "id": "mem-123",
+      "content": "Working on microservices migration at work",
+      "type": "event",
+      "importance": 0.8,
+      "decayFactor": 0.95,
+      "createdAt": "2024-01-14T00:00:00Z",
+      "lastAccessedAt": "2024-01-15T00:00:00Z"
+    },
+    {
+      "id": "mem-124",
+      "content": "Prefers async/await patterns over callbacks",
+      "type": "preference",
+      "importance": 0.6,
+      "decayFactor": 1.0,
+      "createdAt": "2024-01-10T00:00:00Z",
+      "lastAccessedAt": null
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Example
+
+```bash
+# Get all memories
+curl https://api.yourserver.com/api/profiles/user-123/memories \
+  -H "Authorization: Bearer gp_your_key"
+
+# Get only facts
+curl "https://api.yourserver.com/api/profiles/user-123/memories?type=fact&limit=10" \
+  -H "Authorization: Bearer gp_your_key"
+```

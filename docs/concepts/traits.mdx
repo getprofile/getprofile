@@ -1,0 +1,120 @@
+---
+title: Traits
+description: "Structured user attributes with confidence scores"
+---
+
+## What are Traits?
+
+Traits are structured attributes extracted from user conversations. Unlike unstructured memory, traits are:
+
+- **Typed**: String, number, boolean, array, or enum
+- **Labeled**: Each trait has a defined key and category
+- **Scored**: Confidence level from 0.0 to 1.0
+- **Tracked**: Source messages are recorded (optionally)
+
+## Trait Structure
+
+```typescript
+interface Trait {
+  id: string;
+  profileId: string;
+  key: string; // e.g., "preferred_language"
+  category: string | null; // e.g., "communication"
+  valueType: "string" | "number" | "boolean" | "array" | "enum";
+  value: unknown;
+  confidence: number; // 0.0 - 1.0
+  source: "extracted" | "manual" | "inferred";
+  sourceMessageIds: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+## Default Traits
+
+GetProfile includes these default traits out of the box:
+
+| Trait                 | Type   | Category      | Description                              |
+| --------------------- | ------ | ------------- | ---------------------------------------- |
+| `name`                | string | identity      | User's name or preferred name            |
+| `preferred_language`  | string | communication | Communication language                   |
+| `communication_style` | enum   | communication | formal, casual, technical, simple        |
+| `detail_preference`   | enum   | communication | brief, moderate, detailed                |
+| `expertise_level`     | enum   | context       | beginner, intermediate, advanced, expert |
+| `timezone`            | string | context       | User's timezone                          |
+| `interests`           | array  | preferences   | Topics the user is interested in         |
+| `current_goals`       | array  | context       | What the user is working toward          |
+
+Customize or extend this schema via JSON configuration files or dynamically per-request. See [Trait Schema Configuration](/concepts/trait-schemas) for details.
+
+## Confidence Scores
+
+Confidence represents how certain GetProfile is about a trait value:
+
+| Score   | Meaning            | Example                            |
+| ------- | ------------------ | ---------------------------------- |
+| 0.9+    | Explicit statement | "My name is Alex"                  |
+| 0.7-0.9 | Strong indication  | Uses technical jargon consistently |
+| 0.5-0.7 | Moderate inference | Seems to prefer detailed responses |
+| < 0.5   | Weak inference     | Might be interested in Python      |
+
+<Tip>
+  Traits with low confidence are still stored but may not be injected into
+  prompts. Configure the `confidenceThreshold` in your trait schema.
+</Tip>
+
+## Trait Sources
+
+| Source      | Description                                |
+| ----------- | ------------------------------------------ |
+| `extracted` | Automatically extracted from conversations |
+| `manual`    | Set directly via API                       |
+| `inferred`  | Derived from other traits or patterns      |
+
+## Trait Updates
+
+When new information conflicts with existing traits:
+
+1. **Higher confidence wins**: New extraction with 0.8 confidence overrides existing 0.5
+2. **Manual takes priority**: Manually set traits are preserved unless explicitly updated
+3. **Contradictions delete**: If new info directly contradicts a trait, it's deleted
+
+## Example: Trait Extraction
+
+Given this conversation:
+
+```
+User: Hi, I'm Alex and I've been coding in Python for about 5 years now.
+      I prefer when explanations are concise and technical.
+```
+
+GetProfile extracts:
+
+```json
+[
+  {
+    "key": "name",
+    "value": "Alex",
+    "confidence": 0.95,
+    "action": "create"
+  },
+  {
+    "key": "expertise_level",
+    "value": "advanced",
+    "confidence": 0.75,
+    "action": "create"
+  },
+  {
+    "key": "communication_style",
+    "value": "technical",
+    "confidence": 0.85,
+    "action": "create"
+  },
+  {
+    "key": "detail_preference",
+    "value": "brief",
+    "confidence": 0.7,
+    "action": "create"
+  }
+]
+```

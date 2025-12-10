@@ -1,0 +1,176 @@
+---
+title: Trait Schemas
+description: "Define what GetProfile extracts from conversations"
+---
+
+## What are Trait Schemas?
+
+Trait schemas define the structure and extraction rules for user traits. They tell GetProfile:
+
+- What traits to look for
+- How to extract them
+- How to inject them into prompts
+
+## Schema Structure
+
+```typescript
+interface TraitSchema {
+  key: string; // Unique identifier
+  label?: string; // Human-readable name
+  description?: string; // What this trait represents
+  valueType: "string" | "number" | "boolean" | "array" | "enum";
+  enumValues?: string[]; // For enum types
+  category?: string; // Grouping (communication, context, etc.)
+
+  extraction: {
+    enabled: boolean;
+    promptSnippet?: string; // Hint for extraction
+    confidenceThreshold: number; // Minimum confidence to store
+  };
+
+  injection: {
+    enabled: boolean;
+    template?: string; // How to format in prompt
+    priority: number; // Order in injection (higher = earlier)
+  };
+}
+```
+
+## Default Schema
+
+GetProfile ships with a default schema at `config/traits/default.traits.json`:
+
+```json
+{
+  "traits": [
+    {
+      "key": "name",
+      "label": "Name",
+      "description": "User's name or preferred name",
+      "valueType": "string",
+      "category": "identity",
+      "extraction": {
+        "enabled": true,
+        "promptSnippet": "Extract the user's name if they mention it",
+        "confidenceThreshold": 0.9
+      },
+      "injection": {
+        "enabled": true,
+        "template": "User's name is {{value}}.",
+        "priority": 10
+      }
+    }
+  ]
+}
+```
+
+## Custom Schemas
+
+Create domain-specific schemas for your use case:
+
+<Tabs>
+  <Tab title="Customer Support">
+    ```json
+    {
+      "traits": [
+        {
+          "key": "subscription_tier",
+          "valueType": "enum",
+          "enumValues": ["free", "pro", "enterprise"],
+          "extraction": {
+            "enabled": true,
+            "promptSnippet": "Infer subscription level from context"
+          },
+          "injection": {
+            "template": "Customer is on {{value}} plan."
+          }
+        },
+        {
+          "key": "frustration_level",
+          "valueType": "enum",
+          "enumValues": ["calm", "frustrated", "angry"],
+          "extraction": {
+            "enabled": true,
+            "promptSnippet": "Assess emotional state from tone"
+          }
+        }
+      ]
+    }
+    ```
+  </Tab>
+  <Tab title="Gaming NPC">
+    ```json
+    {
+      "traits": [
+        {
+          "key": "player_class",
+          "valueType": "enum",
+          "enumValues": ["warrior", "mage", "rogue", "healer"]
+        },
+        {
+          "key": "play_style",
+          "valueType": "enum",
+          "enumValues": ["aggressive", "defensive", "balanced"]
+        },
+        {
+          "key": "quest_progress",
+          "valueType": "array",
+          "extraction": {
+            "promptSnippet": "Track completed quests mentioned"
+          }
+        }
+      ]
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Per-Request Overrides
+
+Define traits dynamically for specific requests:
+
+```typescript
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Help me plan my trip" }],
+  extra_body: {
+    getprofile: {
+      traits: [
+        {
+          key: "travel_preferences",
+          valueType: "string",
+          extraction: {
+            enabled: true,
+            promptSnippet: "Extract travel style preferences",
+          },
+          injection: {
+            enabled: true,
+            template: "User prefers: {{value}}",
+          },
+        },
+      ],
+    },
+  },
+});
+```
+
+<Info>
+  Per-request traits completely replace system traits when provided (no
+  merging). This gives full control per request.
+</Info>
+
+## Extraction Configuration
+
+| Field                 | Description                           |
+| --------------------- | ------------------------------------- |
+| `enabled`             | Whether to extract this trait         |
+| `promptSnippet`       | Hint added to extraction prompt       |
+| `confidenceThreshold` | Minimum confidence to store (0.0-1.0) |
+
+## Injection Configuration
+
+| Field      | Description                                |
+| ---------- | ------------------------------------------ |
+| `enabled`  | Whether to inject this trait               |
+| `template` | Format string with `{{value}}` placeholder |
+| `priority` | Order in injection (higher = earlier)      |

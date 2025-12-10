@@ -1,0 +1,89 @@
+---
+title: Customer Support Bot That Actually "Remembers" You
+description: "Support chatbots with persistent user context and preferences"
+---
+
+## Scenario
+
+SaaS product with an in-app / website support chatbot that needs to remember user context across conversations.
+
+## Extraction
+
+From chats, tickets, and events, GetProfile keeps a live profile per end-user:
+
+- `plan_tier`: free / pro / enterprise
+- `product_areas_used[]`: "billing", "integrations", "dashboards"
+- `recurring_issues[]`: "confused about usage limits", "OAuth failures"
+- `frustration_level`: low / medium / high
+- `tone_preference`: patient explanations vs short answers
+
+No one fills this out manually; it's inferred from conversations + app events.
+
+## Injection
+
+When the user talks to the bot again, calls go through the GetProfile proxy:
+
+- It injects a short profile block into the system prompt:
+  - "Pro-tier user, power user of integrations, recently frustrated about rate limits, prefers direct answers."
+
+- It also injects a couple of **recent, high-signal memories**:
+  - last failed integration attempt,
+  - last time support promised a fix.
+
+## Impact
+
+The bot can:
+
+- Skip basic docs if user is a power user.
+- Preempt "we've had this issue before" with context.
+- Use calmer, more careful language if `frustration_level` is high.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': userId, // Your app's user ID
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Support bot conversation
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are a helpful support agent. Be concise and technical for power users.',
+},
+{
+role: 'user',
+content: 'I keep getting rate limit errors on my API calls.',
+},
+],
+});
+// GetProfile automatically injects user profile and relevant memories
+
+```
+</CodeGroup>
+
+## Trait Schema Example
+
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Proxy Integration" icon="arrow-right-arrow-left" href="/openai-compatibility">
+    Learn how to set up the proxy for automatic injection
+  </Card>
+  <Card title="Trait Schemas" icon="sliders" href="/configuration/trait-schemas">
+    Configure custom traits for your support use case
+  </Card>
+</CardGroup>
+
+```

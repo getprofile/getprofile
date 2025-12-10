@@ -1,0 +1,123 @@
+---
+title: Internal Knowledge Assistant Tailored to Each Employee
+description: "Company AI assistants that adapt to each employee's role and expertise"
+---
+
+## Scenario
+
+Internal "Ask AI" for company docs/code/processes that needs to adapt to each employee's role and knowledge level.
+
+## Extraction
+
+From questions, docs visited, and tools used, GetProfile creates:
+
+- `department`, `team`, `role`
+- `project_contexts[]`: which repos / services they touch
+- `topic_familiarity`: "deep in payments service", "novice in infra", etc.
+- `documentation_style_preference`: likes code samples vs concept docs
+
+All inferred from their questions and link click patterns.
+
+## Injection
+
+When they ask, "How do I add a new metric to our billing pipeline?":
+
+- GetProfile injects:
+  - "User is on the billing team, familiar with service X but not Y; prefers answers with code snippets and direct links to runbooks."
+
+- Plus a couple of relevant memories:
+  - previous similar question and answer,
+  - docs they read last time.
+
+## Impact
+
+- The assistant answers at the right depth and with the right references.
+- Onboarding is smoother, since the assistant adapts to each newcomer over time.
+
+## Implementation
+
+<CodeGroup>
+```typescript TypeScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+apiKey: process.env.GETPROFILE_API_KEY,
+baseURL: 'https://api.yourserver.com/v1',
+defaultHeaders: {
+'X-GetProfile-Id': employeeId,
+'X-Upstream-Key': process.env.OPENAI_API_KEY,
+},
+});
+
+// Knowledge base query
+const response = await client.chat.completions.create({
+model: 'gpt-5',
+messages: [
+{
+role: 'system',
+content: 'You are an internal knowledge assistant. Provide answers at the appropriate depth for the employee\'s role and expertise.',
+},
+{
+role: 'user',
+content: 'How do I add a new metric to our billing pipeline?',
+},
+],
+});
+// GetProfile injects employee's role, expertise areas, and documentation preferences
+
+````
+</CodeGroup>
+
+## Trait Schema Example
+
+```json
+{
+  "department": {
+    "type": "string",
+    "description": "Employee's department"
+  },
+  "team": {
+    "type": "string",
+    "description": "Employee's team"
+  },
+  "role": {
+    "type": "string",
+    "description": "Job title or role"
+  },
+  "project_contexts": {
+    "type": "array",
+    "items": {
+      "type": "string"
+    },
+    "description": "Repositories, services, or projects the employee works on"
+  },
+  "topic_familiarity": {
+    "type": "object",
+    "description": "Familiarity level per topic or service",
+    "additionalProperties": {
+      "type": "string",
+      "enum": ["novice", "intermediate", "expert"]
+    }
+  },
+  "documentation_style_preference": {
+    "type": "string",
+    "enum": ["code-samples", "concept-docs", "step-by-step", "reference"],
+    "description": "Preferred documentation format"
+  }
+}
+````
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card
+    title="Proxy Integration"
+    icon="arrow-right-arrow-left"
+    href="/openai-compatibility"
+  >
+    Set up automatic context injection for your knowledge base
+  </Card>
+  <Card title="Memories API" icon="brain" href="/api-reference/memories/create">
+    Store and retrieve past questions and answers
+  </Card>
+</CardGroup>

@@ -1,0 +1,175 @@
+---
+title: Chat Completions
+description: "OpenAI-compatible chat completion endpoint"
+api: POST /v1/chat/completions
+---
+
+## Overview
+
+The chat completions endpoint is fully compatible with OpenAI's API. GetProfile automatically:
+
+1. Loads the user's profile
+2. Injects relevant context into the system message
+3. Forwards the request to the upstream provider
+4. Extracts traits and memories in the background
+
+## Request
+
+<ParamField body="model" type="string" required>
+  Model to use (e.g., `gpt-5`, `gpt-5-mini`)
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Array of message objects
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Enable streaming responses
+</ParamField>
+
+<ParamField body="user" type="string">
+  User identifier (alternative to `X-GetProfile-Id` header)
+</ParamField>
+
+<ParamField body="getprofile" type="object">
+  GetProfile-specific options (stripped before forwarding)
+  <Expandable title="getprofile properties">
+    <ParamField body="traits" type="array">
+      Per-request trait schema overrides
+    </ParamField>
+    <ParamField body="skipInjection" type="boolean">
+      Skip context injection for this request
+    </ParamField>
+    <ParamField body="skipExtraction" type="boolean">
+      Skip background extraction for this request
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+Standard OpenAI chat completion response.
+
+<ResponseExample>
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1704067200,
+  "model": "gpt-5",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello Alex! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 12,
+    "total_tokens": 62
+  }
+}
+```
+</ResponseExample>
+
+## Examples
+
+### Basic Request
+
+<CodeGroup>
+```bash cURL
+curl https://api.yourserver.com/v1/chat/completions \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "X-GetProfile-Id: user-123" \
+  -H "X-Upstream-Key: sk-openai-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'
+```
+
+```typescript TypeScript
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+```
+
+</CodeGroup>
+
+### Streaming
+
+<CodeGroup>
+```bash cURL
+curl https://api.yourserver.com/v1/chat/completions \
+  -H "Authorization: Bearer gp_your_key" \
+  -H "X-GetProfile-Id: user-123" \
+  -H "X-Upstream-Key: sk-openai-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5",
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "stream": true
+  }'
+```
+
+```typescript TypeScript
+const stream = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Hello!" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || "");
+}
+```
+
+</CodeGroup>
+
+### Per-Request Traits
+
+```typescript
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Help me plan my trip" }],
+  // @ts-ignore - GetProfile extension
+  getprofile: {
+    traits: [
+      {
+        key: "travel_preferences",
+        valueType: "object",
+        extraction: { enabled: true },
+        injection: { enabled: true, template: "Travel prefs: {{value}}" },
+      },
+    ],
+  },
+});
+```
+
+### Skip Processing
+
+```typescript
+// Skip context injection (raw request)
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Hello!" }],
+  // @ts-ignore
+  getprofile: { skipInjection: true },
+});
+
+// Skip background extraction
+const response = await client.chat.completions.create({
+  model: "gpt-5",
+  messages: [{ role: "user", content: "Hello!" }],
+  // @ts-ignore
+  getprofile: { skipExtraction: true },
+});
+```
