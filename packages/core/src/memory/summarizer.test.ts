@@ -58,13 +58,16 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'name',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'Alice',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
-      const memories = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue({
         id: profileId,
@@ -98,13 +101,16 @@ describe('ProfileSummarizer', () => {
             profileId,
             key: 'name',
             category: 'identity',
+            valueType: 'string' as const,
             value: 'Bob',
             confidence: 0.9,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ];
-        const memories = [];
+        const memories: never[] = [];
 
         // Mock old summary
         const oldDate = new Date();
@@ -163,13 +169,16 @@ describe('ProfileSummarizer', () => {
             profileId,
             key: 'name',
             category: 'identity',
+            valueType: 'string' as const,
             value: 'Charlie',
             confidence: 0.9,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ];
-        const memories = [];
+        const memories: never[] = [];
 
         mockGetProfileById.mockResolvedValue({
           id: profileId,
@@ -234,8 +243,11 @@ describe('ProfileSummarizer', () => {
             profileId,
             key: 'name',
             category: 'identity',
+            valueType: 'string' as const,
             value: 'David',
             confidence: 0.9,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -244,13 +256,16 @@ describe('ProfileSummarizer', () => {
             profileId,
             key: 'communication_style',
             category: 'communication',
+            valueType: 'string' as const,
             value: 'formal',
             confidence: 0.8,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ];
-        const memories = [];
+        const memories: never[] = [];
 
         mockGetProfileById.mockResolvedValue(
           createProfileRecord({
@@ -290,8 +305,11 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'name',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'Eve',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -300,8 +318,11 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'communication_style',
           category: 'communication',
+          valueType: 'string' as const,
           value: 'casual',
           confidence: 0.8,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -310,8 +331,11 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'expertise_level',
           category: 'context',
+          valueType: 'string' as const,
           value: 'expert',
           confidence: 0.7,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -320,13 +344,16 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'interests',
           category: 'preferences',
+          valueType: 'array' as const,
           value: ['AI', 'TypeScript', 'Open Source'],
           confidence: 0.6,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
-      const memories = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue(
         createProfileRecord({
@@ -363,8 +390,8 @@ describe('ProfileSummarizer', () => {
       try {
         const summarizer = new ProfileSummarizer();
         const profileId = 'profile-123';
-        const traits = [];
-        const memories = [];
+        const traits: never[] = [];
+        const memories: never[] = [];
 
         mockGetProfileById.mockResolvedValue(
           createProfileRecord({
@@ -405,8 +432,11 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'name',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'Frank',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -479,8 +509,8 @@ describe('ProfileSummarizer', () => {
         },
       });
       const profileId = 'profile-123';
-      const traits = [];
-      const memories = [];
+      const traits: never[] = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue(
         createProfileRecord({
@@ -527,13 +557,16 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'name',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'Grace',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
-      const memories = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue(
         createProfileRecord({
@@ -566,8 +599,11 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'high_confidence',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'value1',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -576,13 +612,16 @@ describe('ProfileSummarizer', () => {
           profileId,
           key: 'low_confidence',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'value2',
           confidence: 0.3, // Below 0.5 threshold
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
-      const memories = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue(
         createProfileRecord({
@@ -624,7 +663,7 @@ describe('ProfileSummarizer', () => {
         llm: { apiKey: 'test-key' },
       });
       const profileId = 'profile-123';
-      const traits = [];
+      const traits: never[] = [];
       const memories = Array.from({ length: 15 }, (_, i) => ({
         id: `mem-${i}`,
         profileId,
@@ -676,8 +715,8 @@ describe('ProfileSummarizer', () => {
     it('should increment summary version using stored profile value', async () => {
       const summarizer = new ProfileSummarizer();
       const profileId = 'profile-123';
-      const traits = [];
-      const memories = [];
+      const traits: never[] = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue(
         createProfileRecord({
@@ -710,8 +749,8 @@ describe('ProfileSummarizer', () => {
         llm: { apiKey: 'test-key', timeoutMs: 10 },
       });
       const profileId = 'profile-123';
-      const traits = [];
-      const memories = [];
+      const traits: never[] = [];
+      const memories: never[] = [];
 
       vi.mocked(fetch).mockImplementation((_, options?: RequestInit) => {
         const signal = options?.signal as AbortSignal | undefined;

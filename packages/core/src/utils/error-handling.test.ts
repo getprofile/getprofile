@@ -140,7 +140,7 @@ describe('Error Handling Utilities', () => {
       global.setTimeout = vi.fn((fn: () => void, delay: number) => {
         delays.push(delay);
         return originalSetTimeout(fn, 0) as unknown as NodeJS.Timeout;
-      });
+      }) as unknown as typeof setTimeout;
 
       await retryWithBackoff(fn, {
         maxRetries: 2,

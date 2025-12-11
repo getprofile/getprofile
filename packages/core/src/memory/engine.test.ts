@@ -200,13 +200,16 @@ describe('MemoryEngine', () => {
           profileId,
           key: 'name',
           category: 'identity',
+          valueType: 'string' as const,
           value: 'Alice',
           confidence: 0.9,
+          source: 'extracted' as const,
+          sourceMessageIds: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       ];
-      const memories = [];
+      const memories: never[] = [];
 
       mockGetProfileById.mockResolvedValue({
         id: profileId,
@@ -240,13 +243,16 @@ describe('MemoryEngine', () => {
             profileId,
             key: 'name',
             category: 'identity',
+            valueType: 'string' as const,
             value: 'Bob',
             confidence: 0.9,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ];
-        const memories = [];
+        const memories: never[] = [];
 
         // Mock old summary
         const oldDate = new Date();
@@ -302,13 +308,16 @@ describe('MemoryEngine', () => {
             profileId,
             key: 'name',
             category: 'identity',
+            valueType: 'string' as const,
             value: 'Charlie',
             confidence: 0.9,
+            source: 'extracted' as const,
+            sourceMessageIds: [],
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ];
-        const memories = [];
+        const memories: never[] = [];
 
         mockUpdateProfile.mockResolvedValue({
           id: profileId,

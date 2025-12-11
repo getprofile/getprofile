@@ -288,7 +288,16 @@ describe('ProfileManager', () => {
       const retentionManager = new ProfileManager({ maxMessagesPerProfile: 1 });
       mockGetProfileById.mockResolvedValue(mockDbProfile);
       mockBulkCreateMessages.mockResolvedValue([
-        { id: 'msg-1', role: 'user', content: 'Hello', createdAt: new Date() },
+        {
+          id: 'msg-1',
+          profileId,
+          role: 'user',
+          content: 'Hello',
+          model: null,
+          requestId: null,
+          processed: false,
+          createdAt: new Date(),
+        },
       ]);
       mockGetMessageCount.mockResolvedValue(3);
       mockDeleteOldMessages.mockResolvedValue(2);
