@@ -2,6 +2,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import type { Context } from 'hono';
+import { sendError } from '../lib/errors';
 import { validateMessageCount, validateMessages, MAX_MESSAGES_COUNT, MAX_MESSAGE_LENGTH, MAX_TOTAL_MESSAGES_SIZE } from './chat-validation';
 
 describe('Chat Validation', () => {
@@ -11,9 +12,10 @@ describe('Chat Validation', () => {
     },
   } as unknown as Context;
 
-  const mockSendErrorFn = vi.fn((c: Context, status: number, message: string, type: string, code?: string) => {
-    return new Response(JSON.stringify({ error: { message, type, code } }), { status }) as unknown as Response;
-  });
+  const mockSendErrorFn = vi.fn(((...args: Parameters<typeof sendError>) => {
+    const [, status, message, type, code] = args;
+    return new Response(JSON.stringify({ error: { message, type, code } }), { status }) as unknown as ReturnType<typeof sendError>;
+  }) as typeof sendError);
 
   describe('validateMessageCount', () => {
     it('should accept valid message count', () => {

@@ -38,9 +38,9 @@ export function createErrorResponse(
     error: {
       message,
       type,
-      ...(code && { code }),
-      ...(param && { param }),
-      ...(details && { details }),
+      ...(code ? { code } : {}),
+      ...(param ? { param } : {}),
+      ...(details !== undefined ? { details } : {}),
     },
   };
 }

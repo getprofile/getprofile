@@ -105,17 +105,19 @@ function isMemoryRecord(memory: Memory | MemoryRecord): memory is MemoryRecord {
 }
 
 function serializeMemory(memory: Memory | MemoryRecord) {
-  const sourceMessageIds = isMemoryRecord(memory)
-    ? (memory.sourceMessageIds as unknown)
-    : memory.sourceMessageIds;
+  let sourceMessageIds: string[];
+  let importance: number;
+  let decayFactor: number;
 
-  const importance = isMemoryRecord(memory)
-    ? (memory.importance ?? 0.5)
-    : memory.importance;
-
-  const decayFactor = isMemoryRecord(memory)
-    ? (memory.decayFactor ?? 1.0)
-    : memory.decayFactor;
+  if (isMemoryRecord(memory)) {
+    sourceMessageIds = Array.isArray(memory.sourceMessageIds) ? memory.sourceMessageIds : [];
+    importance = memory.importance ?? 0.5;
+    decayFactor = memory.decayFactor ?? 1.0;
+  } else {
+    sourceMessageIds = (memory as Memory).sourceMessageIds;
+    importance = (memory as Memory).importance;
+    decayFactor = (memory as Memory).decayFactor;
+  }
 
   return {
     id: memory.id,
@@ -124,7 +126,7 @@ function serializeMemory(memory: Memory | MemoryRecord) {
     type: memory.type,
     importance,
     decayFactor,
-    sourceMessageIds: Array.isArray(sourceMessageIds) ? sourceMessageIds : [],
+    sourceMessageIds,
     createdAt: memory.createdAt.toISOString(),
     lastAccessedAt: memory.lastAccessedAt
       ? memory.lastAccessedAt.toISOString()
