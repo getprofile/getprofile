@@ -45,7 +45,6 @@ function mergeProps<T extends HTMLElement>(
 
 function Slot<T extends HTMLElement = HTMLElement>({
   children,
-  ref,
   ...props
 }: SlotProps<T>) {
   if (!React.isValidElement(children)) return null;

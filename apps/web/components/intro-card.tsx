@@ -5,6 +5,8 @@ import { Button } from "./ui/button";
 import Link from "next/link";
 import { BookOpen, Github } from "lucide-react";
 import { Logo } from "./logo";
+import { ProductHuntBadge } from "./ph-badge";
+
 export function IntroCard() {
   return (
     <Card className="relative w-full h-full overflow-hidden">
@@ -30,6 +32,9 @@ export function IntroCard() {
               Docs <BookOpen />
             </Link>
           </Button>
+        </div>
+        <div className="mt-6">
+          <ProductHuntBadge />
         </div>
       </CardContent>
     </Card>
